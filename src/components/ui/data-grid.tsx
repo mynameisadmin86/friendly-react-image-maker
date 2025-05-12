@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Table, 
   TableBody, 
@@ -10,17 +10,32 @@ import {
 } from '@/components/ui/table';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Filter, Download } from 'lucide-react';
+import { Filter, Download, ArrowUpDown } from 'lucide-react';
 import { SearchBar } from '@/components/ui/search-bar';
+import { FilterPopup } from '@/components/ui/filter-popup';
+
+export type SortDirection = 'asc' | 'desc' | null;
+
+export interface SortState {
+  column: string | null;
+  direction: SortDirection;
+}
 
 interface DataGridProps {
   title?: React.ReactNode;
   count?: number;
   children: React.ReactNode;
   onSearch?: (value: string) => void;
-  onFilter?: () => void;
+  onFilter?: (filters: any) => void;
   onExport?: () => void;
   showToolbar?: boolean;
+  onSortChange?: (sortState: SortState) => void;
+  filterFields?: {
+    name: string;
+    label: string;
+    type: 'text' | 'select' | 'date';
+    options?: { label: string; value: string }[];
+  }[];
 }
 
 const DataGrid = ({
@@ -31,9 +46,26 @@ const DataGrid = ({
   onFilter,
   onExport,
   showToolbar = true,
+  onSortChange,
+  filterFields,
 }: DataGridProps) => {
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState('');
+
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (onSearch) onSearch(e.target.value);
+    const value = e.target.value;
+    setSearchValue(value);
+    
+    if (onSearch) onSearch(value);
+  };
+
+  const handleFilterButtonClick = () => {
+    setIsFilterOpen(!isFilterOpen);
+  };
+
+  const handleFilterApply = (filters: any) => {
+    if (onFilter) onFilter(filters);
+    setIsFilterOpen(false);
   };
 
   return (
@@ -51,11 +83,22 @@ const DataGrid = ({
             </h2>
           )}
           <div className="flex items-center gap-3">
-            <SearchBar onChange={handleSearchChange} />
-            {onFilter && (
-              <Button variant="outline" size="icon" onClick={onFilter}>
-                <Filter className="h-4 w-4" />
-              </Button>
+            <SearchBar 
+              value={searchValue}
+              onChange={handleSearchChange} 
+            />
+            {onFilter && filterFields && (
+              <FilterPopup 
+                isOpen={isFilterOpen}
+                onOpenChange={setIsFilterOpen}
+                fields={filterFields}
+                onApplyFilter={handleFilterApply}
+                triggerElement={
+                  <Button variant="outline" size="icon" onClick={handleFilterButtonClick}>
+                    <Filter className="h-4 w-4" />
+                  </Button>
+                }
+              />
             )}
             {onExport && (
               <Button variant="outline" size="icon" onClick={onExport}>
@@ -71,6 +114,28 @@ const DataGrid = ({
         </Table>
       </Card>
     </>
+  );
+};
+
+// Sorting header component that we'll export for use in column headers
+export const SortableHeader: React.FC<{
+  column: string;
+  children: React.ReactNode;
+  currentSort: SortState;
+  onSort: (column: string) => void;
+}> = ({ column, children, currentSort, onSort }) => {
+  const isActive = currentSort.column === column;
+  
+  return (
+    <div 
+      className="flex items-center gap-1 cursor-pointer" 
+      onClick={() => onSort(column)}
+    >
+      {children}
+      <ArrowUpDown 
+        className={`h-4 w-4 ${isActive ? 'text-logistics-blue' : 'text-gray-400'}`} 
+      />
+    </div>
   );
 };
 
