@@ -8,6 +8,7 @@ import AppLayout from "./components/AppLayout";
 import Index from "./pages/Index";
 import BillingPage from "./pages/BillingPage";
 import CreateBillPage from "./pages/CreateBillPage";
+import ShipmentsPage from "./pages/ShipmentsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,6 +24,7 @@ const App = () => (
             <Route index element={<Index />} />
             <Route path="billing" element={<BillingPage />} />
             <Route path="billing/create" element={<CreateBillPage />} />
+            <Route path="shipments" element={<ShipmentsPage />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
