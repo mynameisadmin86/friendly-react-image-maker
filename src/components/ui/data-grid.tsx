@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/table';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Filter, Download, FileExcel, FilePdf, ArrowUpDown, Edit, Check, X } from 'lucide-react';
+import { Filter, Download, File, FileText, ArrowUpDown, Edit, Check, X } from 'lucide-react';
 import { SearchBar } from '@/components/ui/search-bar';
 import { FilterPopup } from '@/components/ui/filter-popup';
 import { 
@@ -300,10 +300,10 @@ const DataGrid = ({
             {onExport && (
               <div className="flex gap-1">
                 <Button variant="outline" size="icon" onClick={() => handleExport('pdf')} title="Export as PDF">
-                  <FilePdf className="h-4 w-4" />
+                  <FileText className="h-4 w-4" />
                 </Button>
                 <Button variant="outline" size="icon" onClick={() => handleExport('excel')} title="Export as Excel">
-                  <FileExcel className="h-4 w-4" />
+                  <File className="h-4 w-4" />
                 </Button>
               </div>
             )}
