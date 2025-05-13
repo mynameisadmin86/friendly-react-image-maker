@@ -1,20 +1,31 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { SearchCard } from '@/components/ui/search-card';
+import { DataGrid, SortState, Column } from '@/components/ui/data-grid';
 import Breadcrumb from '@/components/Breadcrumb';
 import StatusBadge from '@/components/StatusBadge';
 import { Package } from 'lucide-react';
-import { SearchCard } from '@/components/ui/search-card';
-import { DataGrid, SortableHeader, SortState } from '@/components/ui/data-grid';
+
+// Mock data for shipment items
+interface ShipmentItem {
+  id: string;
+  date: string;
+  status: 'Processing' | 'Completed' | 'Fresh';
+  origin: string;
+  destination: string;
+  type: string;
+  weight: string;
+  customer: string;
+  eta: string;
+}
 
 // Mock data
-const initialShipments = [
+const initialShipments: ShipmentItem[] = [
   {
     id: 'SHP-00001',
     date: '14/05/2024',
-    status: 'Processing' as const,
+    status: 'Processing',
     origin: 'Hamburg, DE',
     destination: 'Rotterdam, NL',
     type: 'Container',
@@ -25,7 +36,7 @@ const initialShipments = [
   {
     id: 'SHP-00002',
     date: '13/05/2024',
-    status: 'Completed' as const,
+    status: 'Completed',
     origin: 'Berlin, DE',
     destination: 'Paris, FR',
     type: 'Bulk',
@@ -36,7 +47,7 @@ const initialShipments = [
   {
     id: 'SHP-00003',
     date: '12/05/2024',
-    status: 'Fresh' as const,
+    status: 'Fresh',
     origin: 'Munich, DE',
     destination: 'Vienna, AT',
     type: 'Container',
@@ -49,7 +60,20 @@ const initialShipments = [
 const ShipmentsPage = () => {
   const [isSearchExpanded, setIsSearchExpanded] = useState(true);
   const [shipments, setShipments] = useState(initialShipments);
+  const [filteredShipments, setFilteredShipments] = useState(initialShipments);
   const [sortState, setSortState] = useState<SortState>({ column: null, direction: null });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(3);
+  
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredShipments.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentShipments = filteredShipments.slice(indexOfFirstItem, indexOfLastItem);
+  
+  useEffect(() => {
+    setFilteredShipments(shipments);
+  }, [shipments]);
   
   const handleToggleSearch = () => {
     setIsSearchExpanded(!isSearchExpanded);
@@ -66,26 +90,25 @@ const ShipmentsPage = () => {
   const handleTableSearch = (value: string) => {
     console.log('Table search:', value);
     
-    // Simple search functionality
     if (value.trim() === '') {
-      setShipments(initialShipments);
+      setFilteredShipments(shipments);
     } else {
       const lowercasedValue = value.toLowerCase();
-      const filtered = initialShipments.filter(shipment => 
+      const filtered = shipments.filter(shipment => 
         shipment.id.toLowerCase().includes(lowercasedValue) ||
         shipment.origin.toLowerCase().includes(lowercasedValue) ||
         shipment.destination.toLowerCase().includes(lowercasedValue) ||
         shipment.customer.toLowerCase().includes(lowercasedValue)
       );
-      setShipments(filtered);
+      setFilteredShipments(filtered);
     }
+    setCurrentPage(1);
   };
 
   const handleFilter = (filters: any) => {
     console.log('Filters applied:', filters);
     
-    // Simple filter implementation
-    let filtered = [...initialShipments];
+    let filtered = [...shipments];
     
     if (filters.origin) {
       filtered = filtered.filter(shipment => 
@@ -111,43 +134,49 @@ const ShipmentsPage = () => {
       );
     }
     
-    setShipments(filtered);
+    setFilteredShipments(filtered);
+    setCurrentPage(1);
   };
 
-  const handleSort = (column: string) => {
-    let direction: SortDirection = 'asc';
+  const handleSort = (newSortState: SortState) => {
+    setSortState(newSortState);
     
-    if (sortState.column === column) {
-      if (sortState.direction === 'asc') {
-        direction = 'desc';
-      } else if (sortState.direction === 'desc') {
-        direction = null;
-      } else {
-        direction = 'asc';
-      }
-    }
-    
-    setSortState({ column, direction });
-    
-    // Sort the data
-    if (direction === null) {
-      setShipments([...initialShipments]);
+    if (newSortState.direction === null) {
+      setFilteredShipments([...shipments]);
       return;
     }
     
-    const sortedShipments = [...shipments].sort((a: any, b: any) => {
+    const column = newSortState.column as keyof ShipmentItem;
+    const direction = newSortState.direction;
+    
+    const sortedShipments = [...filteredShipments].sort((a, b) => {
       if (a[column] < b[column]) return direction === 'asc' ? -1 : 1;
       if (a[column] > b[column]) return direction === 'asc' ? 1 : -1;
       return 0;
     });
     
-    setShipments(sortedShipments);
+    setFilteredShipments(sortedShipments);
   };
 
-  const handleExport = () => {
-    console.log('Export clicked');
-    // Implement export functionality
-    alert('Export functionality would download data as CSV/Excel');
+  const handleExport = (format: 'pdf' | 'excel') => {
+    console.log(`Exporting as ${format}`);
+    alert(`Exporting data as ${format.toUpperCase()}`);
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleRowEdit = (rowIndex: number, key: string, value: any) => {
+    console.log(`Editing row ${rowIndex}, field ${key} to value: ${value}`);
+    
+    const newShipments = [...filteredShipments];
+    const actualIndex = indexOfFirstItem + rowIndex;
+    
+    if (newShipments[actualIndex] && key in newShipments[actualIndex]) {
+      (newShipments[actualIndex] as any)[key] = value;
+      setFilteredShipments(newShipments);
+    }
   };
 
   const filterFields = [
@@ -171,6 +200,57 @@ const ShipmentsPage = () => {
         { label: 'Fresh', value: 'Fresh' },
         { label: 'Completed', value: 'Completed' }
       ]
+    }
+  ];
+
+  // Define columns for the DataGrid
+  const columns: Column[] = [
+    { 
+      key: 'id', 
+      header: 'Shipment ID',
+      cell: (value, row) => (
+        <div>
+          <div className="font-medium text-sm">{value}</div>
+          <div className="text-xs text-gray-500">{row.date}</div>
+        </div>
+      )
+    },
+    { 
+      key: 'status', 
+      header: 'Status',
+      cell: (value) => <StatusBadge status={value} />
+    },
+    { 
+      key: 'origin', 
+      header: 'Origin/Destination',
+      isEditable: true,
+      cell: (value, row) => (
+        <div>
+          <div className="font-medium text-sm">{value}</div>
+          <div className="text-xs text-gray-500">{row.destination}</div>
+        </div>
+      )
+    },
+    { 
+      key: 'type', 
+      header: 'Type/Weight',
+      isEditable: true,
+      cell: (value, row) => (
+        <div>
+          <div className="font-medium text-sm">{value}</div>
+          <div className="text-xs text-gray-500">{row.weight}</div>
+        </div>
+      )
+    },
+    { 
+      key: 'customer', 
+      header: 'Customer',
+      isEditable: true
+    },
+    { 
+      key: 'eta', 
+      header: 'ETA',
+      isEditable: true 
     }
   ];
 
@@ -223,112 +303,21 @@ const ShipmentsPage = () => {
             Shipments
           </div>
         }
-        count={shipments.length}
+        count={filteredShipments.length}
+        columns={columns}
+        data={currentShipments}
         onSearch={handleTableSearch}
         onFilter={handleFilter}
         onExport={handleExport}
+        onSortChange={handleSort}
         filterFields={filterFields}
-      >
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-12">
-              <input type="checkbox" className="h-4 w-4 rounded border-gray-300" />
-            </TableHead>
-            <TableHead>
-              <SortableHeader 
-                column="id" 
-                currentSort={sortState} 
-                onSort={handleSort}
-              >
-                Shipment ID
-              </SortableHeader>
-            </TableHead>
-            <TableHead>
-              <SortableHeader 
-                column="status" 
-                currentSort={sortState} 
-                onSort={handleSort}
-              >
-                Status
-              </SortableHeader>
-            </TableHead>
-            <TableHead>
-              <SortableHeader 
-                column="origin" 
-                currentSort={sortState} 
-                onSort={handleSort}
-              >
-                Origin/Destination
-              </SortableHeader>
-            </TableHead>
-            <TableHead>
-              <SortableHeader 
-                column="type" 
-                currentSort={sortState} 
-                onSort={handleSort}
-              >
-                Type/Weight
-              </SortableHeader>
-            </TableHead>
-            <TableHead>
-              <SortableHeader 
-                column="customer" 
-                currentSort={sortState} 
-                onSort={handleSort}
-              >
-                Customer
-              </SortableHeader>
-            </TableHead>
-            <TableHead>
-              <SortableHeader 
-                column="eta" 
-                currentSort={sortState} 
-                onSort={handleSort}
-              >
-                ETA
-              </SortableHeader>
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {shipments.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={7} className="h-24 text-center">
-                No shipments found
-              </TableCell>
-            </TableRow>
-          ) : (
-            shipments.map((shipment) => (
-              <TableRow key={shipment.id}>
-                <TableCell>
-                  <input type="checkbox" className="h-4 w-4 rounded border-gray-300" />
-                </TableCell>
-                <TableCell>
-                  <div className="font-medium text-sm">{shipment.id}</div>
-                  <div className="text-xs text-gray-500">{shipment.date}</div>
-                </TableCell>
-                <TableCell>
-                  <StatusBadge status={shipment.status} />
-                </TableCell>
-                <TableCell>
-                  <div className="font-medium text-sm">{shipment.origin}</div>
-                  <div className="text-xs text-gray-500">{shipment.destination}</div>
-                </TableCell>
-                <TableCell>
-                  <div className="font-medium text-sm">{shipment.type}</div>
-                  <div className="text-xs text-gray-500">{shipment.weight}</div>
-                </TableCell>
-                <TableCell>
-                  <div className="font-medium text-sm">{shipment.customer}</div>
-                </TableCell>
-                <TableCell>
-                  <div className="font-medium text-sm">{shipment.eta}</div>
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </DataGrid>
+        pagination={{
+          currentPage,
+          totalPages,
+          onPageChange: handlePageChange
+        }}
+        onRowEdit={handleRowEdit}
+      />
     </div>
   );
 };
