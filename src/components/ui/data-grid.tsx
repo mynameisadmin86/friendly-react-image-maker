@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { 
   Table, 
@@ -10,7 +9,7 @@ import {
 } from '@/components/ui/table';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Filter, Download, File, FileText, ArrowUpDown, Edit, Check, X, Columns, Plus, Minus } from 'lucide-react';
+import { Filter, Download, File, FileText, ArrowUpDown, Edit, Check, X, Columns, Settings } from 'lucide-react';
 import { SearchBar } from '@/components/ui/search-bar';
 import { FilterPopup } from '@/components/ui/filter-popup';
 import { 
@@ -31,7 +30,10 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuCheckboxItem,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  Checkbox
 } from '@/components/ui/dropdown-menu';
 
 export type SortDirection = 'asc' | 'desc' | null;
@@ -208,10 +210,14 @@ const DataGrid = ({
     if (onExport) onExport(format);
   };
 
-  // Toggle column visibility
+  // Toggle column visibility with improved function
   const toggleColumn = (columnKey: string) => {
     setVisibleColumns(currentVisible => {
       if (currentVisible.includes(columnKey)) {
+        // Prevent hiding all columns
+        if (currentVisible.length <= 1) {
+          return currentVisible;
+        }
         return currentVisible.filter(key => key !== columnKey);
       } else {
         return [...currentVisible, columnKey];
@@ -219,6 +225,17 @@ const DataGrid = ({
     });
   };
 
+  // Toggle all columns
+  const toggleAllColumns = (checked: boolean) => {
+    if (checked) {
+      setVisibleColumns(initialColumns.map(col => col.key));
+    } else {
+      // Always keep at least one column visible
+      setVisibleColumns([initialColumns[0].key]);
+    }
+  };
+
+  // Render pagination component
   const renderPagination = () => {
     if (!pagination) return null;
 
@@ -326,26 +343,45 @@ const DataGrid = ({
                 fields={filterFields}
                 onApplyFilter={handleFilterApply}
                 triggerElement={
-                  <Button variant="outline" size="icon" onClick={handleFilterButtonClick}>
+                  <Button variant="outline" size="icon" onClick={handleFilterButtonClick} title="Filter data">
                     <Filter className="h-4 w-4" />
                   </Button>
                 }
               />
             )}
             
-            {/* Column visibility dropdown */}
+            {/* Column visibility dropdown - Enhanced with better UI */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" title="Toggle columns">
+                <Button variant="outline" size="icon" title="Show/Hide columns">
                   <Columns className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Toggle Columns</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <div className="p-2">
+                  <div className="flex items-center space-x-2 pb-2">
+                    <Checkbox 
+                      id="all-columns"
+                      checked={visibleColumns.length === initialColumns.length}
+                      onCheckedChange={toggleAllColumns}
+                    />
+                    <label
+                      htmlFor="all-columns"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Select all
+                    </label>
+                  </div>
+                </div>
+                <DropdownMenuSeparator />
                 {initialColumns.map(column => (
                   <DropdownMenuCheckboxItem
                     key={column.key}
                     checked={visibleColumns.includes(column.key)}
                     onCheckedChange={() => toggleColumn(column.key)}
+                    disabled={visibleColumns.length === 1 && visibleColumns.includes(column.key)}
                   >
                     {column.header}
                   </DropdownMenuCheckboxItem>

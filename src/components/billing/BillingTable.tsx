@@ -229,6 +229,7 @@ const BillingTable: React.FC<BillingTableProps> = ({ bills }) => {
         onPageChange: handlePageChange
       }}
       onRowEdit={handleRowEdit}
+      defaultEditable={true}
     />
   );
 };
