@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   TableBody, 
@@ -136,11 +135,12 @@ const BillingTable: React.FC<BillingTableProps> = ({ bills }) => {
     { name: 'contractType', label: 'Contract Type', type: 'text' as const }
   ];
 
-  // Define dynamic columns
+  // Define dynamic columns - all columns are now editable by default
   const columns: Column[] = [
     { 
       key: 'id', 
       header: 'Quick Billing No.',
+      isEditable: true,
       cell: (value, row) => (
         <div>
           <div className="font-medium text-sm">{value}</div>
@@ -151,6 +151,7 @@ const BillingTable: React.FC<BillingTableProps> = ({ bills }) => {
     { 
       key: 'status', 
       header: 'Status',
+      isEditable: true,
       cell: (value) => <StatusBadge status={value} />
     },
     { 

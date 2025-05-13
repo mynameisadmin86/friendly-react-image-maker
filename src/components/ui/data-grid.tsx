@@ -60,6 +60,7 @@ interface DataGridProps {
     onPageChange: (page: number) => void;
   };
   onRowEdit?: (rowIndex: number, key: string, value: any) => void;
+  defaultEditable?: boolean;
 }
 
 export interface EditableCellProps {
@@ -140,6 +141,7 @@ const DataGrid = ({
   filterFields,
   pagination,
   onRowEdit,
+  defaultEditable = true, // Set default to true
 }: DataGridProps) => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
@@ -347,12 +349,12 @@ const DataGrid = ({
                         {columns?.map((column) => (
                           <TableCell key={column.key}>
                             {column.cell ? column.cell(row[column.key], row) : (
-                              onRowEdit && column.isEditable ? (
+                              onRowEdit ? (
                                 <EditableCell
                                   value={row[column.key]}
                                   rowIndex={rowIndex}
                                   columnKey={column.key}
-                                  isEditable={column.isEditable}
+                                  isEditable={column.isEditable !== undefined ? column.isEditable : defaultEditable}
                                   onEdit={onRowEdit}
                                 />
                               ) : (

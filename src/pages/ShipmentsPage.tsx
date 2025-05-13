@@ -203,11 +203,12 @@ const ShipmentsPage = () => {
     }
   ];
 
-  // Define columns for the DataGrid
+  // Define columns for the DataGrid - all set to editable
   const columns: Column[] = [
     { 
       key: 'id', 
       header: 'Shipment ID',
+      isEditable: true,
       cell: (value, row) => (
         <div>
           <div className="font-medium text-sm">{value}</div>
@@ -218,6 +219,7 @@ const ShipmentsPage = () => {
     { 
       key: 'status', 
       header: 'Status',
+      isEditable: true,
       cell: (value) => <StatusBadge status={value} />
     },
     { 
