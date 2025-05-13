@@ -135,12 +135,13 @@ const BillingTable: React.FC<BillingTableProps> = ({ bills }) => {
     { name: 'contractType', label: 'Contract Type', type: 'text' as const }
   ];
 
-  // Define dynamic columns - all columns are now editable by default
+  // Define dynamic columns - all columns are now editable by default and have width properties
   const columns: Column[] = [
     { 
       key: 'id', 
       header: 'Quick Billing No.',
       isEditable: true,
+      width: 20,
       cell: (value, row) => (
         <div>
           <div className="font-medium text-sm">{value}</div>
@@ -152,12 +153,14 @@ const BillingTable: React.FC<BillingTableProps> = ({ bills }) => {
       key: 'status', 
       header: 'Status',
       isEditable: true,
+      width: 15,
       cell: (value) => <StatusBadge status={value} />
     },
     { 
       key: 'customerSupplier', 
       header: 'Customer/Supplier',
       isEditable: true,
+      width: 20,
       cell: (value, row) => (
         <div>
           <div className="font-medium text-sm">{value}</div>
@@ -169,6 +172,7 @@ const BillingTable: React.FC<BillingTableProps> = ({ bills }) => {
       key: 'contractOrderType', 
       header: 'Contract Order Type',
       isEditable: true,
+      width: 20,
       cell: (value, row) => (
         <div>
           <div className="font-medium text-sm">{value}</div>
@@ -179,12 +183,14 @@ const BillingTable: React.FC<BillingTableProps> = ({ bills }) => {
     { 
       key: 'totalNetAmount', 
       header: 'Total Net Amount',
-      isEditable: true
+      isEditable: true,
+      width: 15
     },
     { 
       key: 'billingType', 
       header: 'Billing Type',
       isEditable: true,
+      width: 15,
       cell: (value, row) => (
         <div>
           <div className="font-medium text-sm">{value}</div>
@@ -196,6 +202,7 @@ const BillingTable: React.FC<BillingTableProps> = ({ bills }) => {
       key: 'groupNetAmount', 
       header: 'Group Net Amount',
       isEditable: true,
+      width: 15,
       cell: (value, row) => (
         <div>
           <div className="font-medium text-sm">{value}</div>

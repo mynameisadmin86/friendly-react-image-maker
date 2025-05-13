@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   Table, 
   TableBody, 
@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/table';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Filter, Download, File, FileText, ArrowUpDown, Edit, Check, X } from 'lucide-react';
+import { Filter, Download, File, FileText, ArrowUpDown, Edit, Check, X, Columns, Plus, Minus } from 'lucide-react';
 import { SearchBar } from '@/components/ui/search-bar';
 import { FilterPopup } from '@/components/ui/filter-popup';
 import { 
@@ -22,6 +22,17 @@ import {
   PaginationPrevious
 } from '@/components/ui/pagination';
 import { Input } from '@/components/ui/input';
+import {
+  ResizablePanelGroup,
+  ResizablePanel,
+  ResizableHandle
+} from '@/components/ui/resizable';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
 
 export type SortDirection = 'asc' | 'desc' | null;
 
@@ -35,6 +46,7 @@ export interface Column {
   header: string;
   isEditable?: boolean;
   cell?: (value: any, row: any) => React.ReactNode;
+  width?: number; // Width for resizable columns
 }
 
 interface DataGridProps {
@@ -130,7 +142,7 @@ export const EditableCell: React.FC<EditableCellProps> = ({
 const DataGrid = ({
   title,
   count,
-  columns,
+  columns: initialColumns = [],
   data,
   children,
   onSearch,
@@ -141,11 +153,21 @@ const DataGrid = ({
   filterFields,
   pagination,
   onRowEdit,
-  defaultEditable = true, // Set default to true
+  defaultEditable = true,
 }: DataGridProps) => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
   const [sortState, setSortState] = useState<SortState>({ column: null, direction: null });
+  
+  // State for visible columns
+  const [visibleColumns, setVisibleColumns] = useState<string[]>(
+    initialColumns.map(col => col.key)
+  );
+  
+  // Get only the columns that should be visible
+  const filteredColumns = initialColumns.filter(col => 
+    visibleColumns.includes(col.key)
+  );
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -184,6 +206,17 @@ const DataGrid = ({
 
   const handleExport = (format: 'pdf' | 'excel') => {
     if (onExport) onExport(format);
+  };
+
+  // Toggle column visibility
+  const toggleColumn = (columnKey: string) => {
+    setVisibleColumns(currentVisible => {
+      if (currentVisible.includes(columnKey)) {
+        return currentVisible.filter(key => key !== columnKey);
+      } else {
+        return [...currentVisible, columnKey];
+      }
+    });
   };
 
   const renderPagination = () => {
@@ -299,6 +332,27 @@ const DataGrid = ({
                 }
               />
             )}
+            
+            {/* Column visibility dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon" title="Toggle columns">
+                  <Columns className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                {initialColumns.map(column => (
+                  <DropdownMenuCheckboxItem
+                    key={column.key}
+                    checked={visibleColumns.includes(column.key)}
+                    onCheckedChange={() => toggleColumn(column.key)}
+                  >
+                    {column.header}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
             {onExport && (
               <div className="flex gap-1">
                 <Button variant="outline" size="icon" onClick={() => handleExport('pdf')} title="Export as PDF">
@@ -316,22 +370,34 @@ const DataGrid = ({
         <Table>
           {children || (
             <>
-              {columns && (
+              {filteredColumns.length > 0 && (
                 <TableHeader>
                   <TableRow>
-                    {columns.map((column) => (
-                      <TableHead key={column.key}>
-                        <div 
-                          className="flex items-center gap-1 cursor-pointer" 
-                          onClick={() => handleSort(column.key)}
-                        >
-                          {column.header}
-                          <ArrowUpDown 
-                            className={`h-4 w-4 ${sortState.column === column.key ? 'text-logistics-blue' : 'text-gray-400'}`} 
-                          />
-                        </div>
-                      </TableHead>
-                    ))}
+                    <ResizablePanelGroup direction="horizontal">
+                      {filteredColumns.map((column, index) => (
+                        <React.Fragment key={column.key}>
+                          <ResizablePanel 
+                            defaultSize={column.width || 100 / filteredColumns.length}
+                            minSize={10}
+                          >
+                            <TableHead>
+                              <div 
+                                className="flex items-center gap-1 cursor-pointer" 
+                                onClick={() => handleSort(column.key)}
+                              >
+                                {column.header}
+                                <ArrowUpDown 
+                                  className={`h-4 w-4 ${sortState.column === column.key ? 'text-logistics-blue' : 'text-gray-400'}`} 
+                                />
+                              </div>
+                            </TableHead>
+                          </ResizablePanel>
+                          {index < filteredColumns.length - 1 && (
+                            <ResizableHandle withHandle />
+                          )}
+                        </React.Fragment>
+                      ))}
+                    </ResizablePanelGroup>
                   </TableRow>
                 </TableHeader>
               )}
@@ -339,14 +405,14 @@ const DataGrid = ({
                 <TableBody>
                   {data.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={columns?.length || 1} className="h-24 text-center">
+                      <TableCell colSpan={filteredColumns?.length || 1} className="h-24 text-center">
                         No data found
                       </TableCell>
                     </TableRow>
                   ) : (
                     data.map((row, rowIndex) => (
                       <TableRow key={rowIndex} className="group">
-                        {columns?.map((column) => (
+                        {filteredColumns?.map((column) => (
                           <TableCell key={column.key}>
                             {column.cell ? column.cell(row[column.key], row) : (
                               onRowEdit ? (
