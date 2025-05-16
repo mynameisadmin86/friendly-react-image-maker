@@ -135,13 +135,13 @@ const BillingTable: React.FC<BillingTableProps> = ({ bills }) => {
     { name: 'contractType', label: 'Contract Type', type: 'text' as const }
   ];
 
-  // Define dynamic columns - all columns are now editable by default and have width properties
+  // Define dynamic columns - optimized widths for better data display without scrolling
   const columns: Column[] = [
     { 
       key: 'id', 
       header: 'Quick Billing No.',
       isEditable: true,
-      width: 20,
+      width: 15,
       cell: (value, row) => (
         <div>
           <div className="font-medium text-sm">{value}</div>
@@ -153,14 +153,14 @@ const BillingTable: React.FC<BillingTableProps> = ({ bills }) => {
       key: 'status', 
       header: 'Status',
       isEditable: true,
-      width: 15,
+      width: 10,
       cell: (value) => <StatusBadge status={value} />
     },
     { 
       key: 'customerSupplier', 
       header: 'Customer/Supplier',
       isEditable: true,
-      width: 20,
+      width: 15,
       cell: (value, row) => (
         <div>
           <div className="font-medium text-sm">{value}</div>
@@ -170,9 +170,9 @@ const BillingTable: React.FC<BillingTableProps> = ({ bills }) => {
     },
     { 
       key: 'contractOrderType', 
-      header: 'Contract Order Type',
+      header: 'Contract Type',
       isEditable: true,
-      width: 20,
+      width: 15,
       cell: (value, row) => (
         <div>
           <div className="font-medium text-sm">{value}</div>
@@ -182,9 +182,9 @@ const BillingTable: React.FC<BillingTableProps> = ({ bills }) => {
     },
     { 
       key: 'totalNetAmount', 
-      header: 'Total Net Amount',
+      header: 'Total Net',
       isEditable: true,
-      width: 15
+      width: 10
     },
     { 
       key: 'billingType', 
@@ -200,15 +200,21 @@ const BillingTable: React.FC<BillingTableProps> = ({ bills }) => {
     },
     { 
       key: 'groupNetAmount', 
-      header: 'Group Net Amount',
+      header: 'Group Net',
       isEditable: true,
-      width: 15,
+      width: 10,
       cell: (value, row) => (
         <div>
           <div className="font-medium text-sm">{value}</div>
           <div className="text-xs text-gray-500">{row.lineNo}</div>
         </div>
       )
+    },
+    { 
+      key: 'lineNo', 
+      header: 'Line #',
+      isEditable: true,
+      width: 10
     }
   ];
 

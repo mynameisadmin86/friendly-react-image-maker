@@ -32,9 +32,9 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuTrigger,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
-  Checkbox
+  DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export type SortDirection = 'asc' | 'desc' | null;
 
@@ -51,7 +51,7 @@ export interface Column {
   width?: number; // Width for resizable columns
 }
 
-interface DataGridProps {
+export interface DataGridProps {
   title?: React.ReactNode;
   count?: number;
   columns?: Column[];
@@ -403,76 +403,78 @@ const DataGrid = ({
         </div>
       )}
       <Card>
-        <Table>
-          {children || (
-            <>
-              {filteredColumns.length > 0 && (
-                <TableHeader>
-                  <TableRow>
-                    <ResizablePanelGroup direction="horizontal">
-                      {filteredColumns.map((column, index) => (
-                        <React.Fragment key={column.key}>
-                          <ResizablePanel 
-                            defaultSize={column.width || 100 / filteredColumns.length}
-                            minSize={10}
-                          >
-                            <TableHead>
-                              <div 
-                                className="flex items-center gap-1 cursor-pointer" 
-                                onClick={() => handleSort(column.key)}
-                              >
-                                {column.header}
-                                <ArrowUpDown 
-                                  className={`h-4 w-4 ${sortState.column === column.key ? 'text-logistics-blue' : 'text-gray-400'}`} 
-                                />
-                              </div>
-                            </TableHead>
-                          </ResizablePanel>
-                          {index < filteredColumns.length - 1 && (
-                            <ResizableHandle withHandle />
-                          )}
-                        </React.Fragment>
-                      ))}
-                    </ResizablePanelGroup>
-                  </TableRow>
-                </TableHeader>
-              )}
-              {data && (
-                <TableBody>
-                  {data.length === 0 ? (
+        <div className="overflow-x-auto">
+          <Table>
+            {children || (
+              <>
+                {filteredColumns.length > 0 && (
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={filteredColumns?.length || 1} className="h-24 text-center">
-                        No data found
-                      </TableCell>
+                      {filteredColumns.map((column, index) => (
+                        <TableHead 
+                          key={column.key}
+                          style={{ 
+                            width: column.width ? `${column.width}%` : 'auto',
+                            minWidth: '80px'
+                          }}
+                        >
+                          <div 
+                            className="flex items-center gap-1 cursor-pointer" 
+                            onClick={() => handleSort(column.key)}
+                          >
+                            {column.header}
+                            <ArrowUpDown 
+                              className={`h-4 w-4 ${sortState.column === column.key ? 'text-logistics-blue' : 'text-gray-400'}`} 
+                            />
+                          </div>
+                        </TableHead>
+                      ))}
                     </TableRow>
-                  ) : (
-                    data.map((row, rowIndex) => (
-                      <TableRow key={rowIndex} className="group">
-                        {filteredColumns?.map((column) => (
-                          <TableCell key={column.key}>
-                            {column.cell ? column.cell(row[column.key], row) : (
-                              onRowEdit ? (
-                                <EditableCell
-                                  value={row[column.key]}
-                                  rowIndex={rowIndex}
-                                  columnKey={column.key}
-                                  isEditable={column.isEditable !== undefined ? column.isEditable : defaultEditable}
-                                  onEdit={onRowEdit}
-                                />
-                              ) : (
-                                row[column.key]
-                              )
-                            )}
-                          </TableCell>
-                        ))}
+                  </TableHeader>
+                )}
+                {data && (
+                  <TableBody>
+                    {data.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={filteredColumns?.length || 1} className="h-24 text-center">
+                          No data found
+                        </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              )}
-            </>
-          )}
-        </Table>
+                    ) : (
+                      data.map((row, rowIndex) => (
+                        <TableRow key={rowIndex} className="group">
+                          {filteredColumns?.map((column) => (
+                            <TableCell 
+                              key={column.key}
+                              style={{ 
+                                width: column.width ? `${column.width}%` : 'auto',
+                                minWidth: '80px'
+                              }}
+                            >
+                              {column.cell ? column.cell(row[column.key], row) : (
+                                onRowEdit ? (
+                                  <EditableCell
+                                    value={row[column.key]}
+                                    rowIndex={rowIndex}
+                                    columnKey={column.key}
+                                    isEditable={column.isEditable !== undefined ? column.isEditable : defaultEditable}
+                                    onEdit={onRowEdit}
+                                  />
+                                ) : (
+                                  row[column.key]
+                                )
+                              )}
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                )}
+              </>
+            )}
+          </Table>
+        </div>
         {renderPagination()}
       </Card>
     </>
