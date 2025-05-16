@@ -55,6 +55,18 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger
+} from '@/components/ui/popover';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 export type SortDirection = 'asc' | 'desc' | null;
 
@@ -73,6 +85,9 @@ export interface Column {
   sequence?: number; // Sequence for column ordering
   mandatory?: boolean; // Mandatory flag - can't be hidden
   sortable?: boolean; // Whether column is sortable
+  filterable?: boolean; // Whether column is filterable
+  filterType?: 'text' | 'select' | 'date'; // Type of filter input
+  filterOptions?: { label: string; value: string }[]; // Options for select filter
 }
 
 export interface DataGridProps {
@@ -169,6 +184,46 @@ export const EditableCell: React.FC<EditableCellProps> = ({
   );
 };
 
+// Column Filter component for individual column filtering
+interface ColumnFilterProps {
+  column: Column;
+  onFilterChange: (key: string, value: string) => void;
+  currentValue: string;
+}
+
+const ColumnFilter: React.FC<ColumnFilterProps> = ({ column, onFilterChange, currentValue }) => {
+  const handleChange = (value: string) => {
+    onFilterChange(column.key, value);
+  };
+
+  if (column.filterType === 'select' && column.filterOptions) {
+    return (
+      <Select value={currentValue} onValueChange={handleChange}>
+        <SelectTrigger className="h-7 px-2 w-full text-xs">
+          <SelectValue placeholder={`Filter ${column.header}`} />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="">All</SelectItem>
+          {column.filterOptions.map(option => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    );
+  }
+
+  return (
+    <Input 
+      value={currentValue || ''} 
+      onChange={(e) => handleChange(e.target.value)}
+      placeholder={`Filter ${column.header}`}
+      className="h-7 px-2 text-xs"
+    />
+  );
+};
+
 const DataGrid = ({
   title,
   count,
@@ -193,6 +248,8 @@ const DataGrid = ({
   const [sortState, setSortState] = useState<SortState>({ column: null, direction: null });
   const [expandedRows, setExpandedRows] = useState<Record<number, boolean>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
+  const [showColumnFilters, setShowColumnFilters] = useState(false);
   
   // State for visible columns
   const [visibleColumns, setVisibleColumns] = useState<string[]>(
@@ -222,6 +279,27 @@ const DataGrid = ({
     sortedColumns.filter(col => visibleColumns.includes(col.key)),
     [sortedColumns, visibleColumns]
   );
+
+  // Filter data based on column filters
+  const filteredData = React.useMemo(() => {
+    if (!data) return [];
+    
+    // If no column filters are active, return all data
+    if (Object.keys(columnFilters).length === 0 || !showColumnFilters) {
+      return data;
+    }
+    
+    // Apply column filters
+    return data.filter(item => {
+      // Check each active column filter
+      return Object.entries(columnFilters).every(([key, filterValue]) => {
+        if (!filterValue) return true; // Skip empty filters
+        
+        const itemValue = String(item[key] || '').toLowerCase();
+        return itemValue.includes(filterValue.toLowerCase());
+      });
+    });
+  }, [data, columnFilters, showColumnFilters]);
 
   // Separate columns into main and nested based on maxVisibleColumns
   const mainColumns = filteredColumns.slice(0, maxVisibleColumns);
@@ -332,6 +410,23 @@ const DataGrid = ({
         console.error('Error exporting CSV:', error);
         toast.error('Failed to export CSV');
       }
+    }
+  };
+
+  // Handle column filter change
+  const handleColumnFilterChange = (key: string, value: string) => {
+    setColumnFilters(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
+  // Toggle column filters visibility
+  const toggleColumnFilters = () => {
+    setShowColumnFilters(!showColumnFilters);
+    if (!showColumnFilters) {
+      // Clear filters when enabling to start fresh
+      setColumnFilters({});
     }
   };
 
@@ -489,6 +584,19 @@ const DataGrid = ({
     fileInputRef.current?.click();
   };
 
+  // Calculate pagination items based on filtered data
+  const paginatedData = React.useMemo(() => {
+    if (!pagination || !filteredData) return filteredData;
+    
+    const { currentPage } = pagination;
+    const itemsPerPage = Math.ceil(filteredData.length / pagination.totalPages);
+    
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    
+    return filteredData.slice(start, end);
+  }, [filteredData, pagination]);
+
   // Render pagination component
   const renderPagination = () => {
     if (!pagination) return null;
@@ -608,6 +716,17 @@ const DataGrid = ({
                 }
               />
             )}
+            
+            {/* Column filters toggle button */}
+            <Button
+              variant={showColumnFilters ? "default" : "outline"}
+              size="icon"
+              onClick={toggleColumnFilters}
+              aria-label="Toggle column filters"
+              className={showColumnFilters ? "bg-logistics-blue" : ""}
+            >
+              <Filter className="h-4 w-4" />
+            </Button>
             
             {/* Column visibility and sequencing dropdown */}
             <DropdownMenu>
@@ -757,21 +876,32 @@ const DataGrid = ({
                               <CheckCircle2 className="h-3 w-3 ml-1 text-green-500" aria-label="Mandatory column" />
                             )}
                           </div>
+                          
+                          {/* Column filter */}
+                          {showColumnFilters && (
+                            <div className="mt-2">
+                              <ColumnFilter
+                                column={column}
+                                onFilterChange={handleColumnFilterChange}
+                                currentValue={columnFilters[column.key] || ''}
+                              />
+                            </div>
+                          )}
                         </TableHead>
                       ))}
                     </TableRow>
                   </TableHeader>
                 )}
-                {data && (
+                {filteredData && (
                   <TableBody>
-                    {data.length === 0 ? (
+                    {filteredData.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={hasNestedColumns ? mainColumns.length + 1 : mainColumns.length} className="h-24 text-center">
                           No data found
                         </TableCell>
                       </TableRow>
                     ) : (
-                      data.map((row, rowIndex) => (
+                      paginatedData?.map((row, rowIndex) => (
                         <React.Fragment key={rowIndex}>
                           <TableRow className="group">
                             {/* Expansion toggle button */}
@@ -820,7 +950,7 @@ const DataGrid = ({
                           
                           {/* Nested row with additional columns */}
                           {hasNestedColumns && (
-                            <TableNestedRow isOpen={!!expandedRows[rowIndex]}>
+                            <TableNestedRow isOpen={Boolean(expandedRows[rowIndex])}>
                               <TableCell colSpan={mainColumns.length + 1}>
                                 <div className="p-2 grid grid-cols-2 md:grid-cols-3 gap-4 pl-8">
                                   {nestedColumns.map((column) => (
@@ -910,4 +1040,3 @@ export const SequencableColumn: React.FC<{
 };
 
 export { DataGrid };
-

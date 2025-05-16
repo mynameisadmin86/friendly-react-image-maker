@@ -147,6 +147,8 @@ const BillingTable: React.FC<BillingTableProps> = ({ bills }) => {
       priority: 1,
       sequence: 1,
       mandatory: true, // Can't be hidden
+      filterable: true,
+      filterType: 'text',
       cell: (value, row) => (
         <div>
           <div className="font-medium text-sm">{value}</div>
@@ -161,6 +163,13 @@ const BillingTable: React.FC<BillingTableProps> = ({ bills }) => {
       width: 10,
       priority: 1,
       sequence: 2,
+      filterable: true,
+      filterType: 'select',
+      filterOptions: [
+        { label: 'Under Amendment', value: 'Under Amendment' },
+        { label: 'Fresh', value: 'Fresh' },
+        { label: 'Confirmed', value: 'Confirmed' }
+      ],
       cell: (value) => <StatusBadge status={value} />
     },
     { 
@@ -170,6 +179,8 @@ const BillingTable: React.FC<BillingTableProps> = ({ bills }) => {
       width: 15,
       priority: 1,
       sequence: 3,
+      filterable: true,
+      filterType: 'text',
       cell: (value, row) => (
         <div>
           <div className="font-medium text-sm">{value}</div>
@@ -184,6 +195,8 @@ const BillingTable: React.FC<BillingTableProps> = ({ bills }) => {
       width: 15,
       priority: 2,
       sequence: 4,
+      filterable: true,
+      filterType: 'text',
       cell: (value, row) => (
         <div>
           <div className="font-medium text-sm">{value}</div>
@@ -197,7 +210,9 @@ const BillingTable: React.FC<BillingTableProps> = ({ bills }) => {
       isEditable: true,
       width: 10,
       priority: 3,
-      sequence: 5
+      sequence: 5,
+      filterable: true,
+      filterType: 'text'
     },
     { 
       key: 'billingType', 
@@ -206,6 +221,8 @@ const BillingTable: React.FC<BillingTableProps> = ({ bills }) => {
       width: 15,
       priority: 6,
       sequence: 6,
+      filterable: true,
+      filterType: 'text',
       cell: (value, row) => (
         <div>
           <div className="font-medium text-sm">{value}</div>
@@ -219,7 +236,9 @@ const BillingTable: React.FC<BillingTableProps> = ({ bills }) => {
       isEditable: true,
       width: 10,
       priority: 7,
-      sequence: 7
+      sequence: 7,
+      filterable: true,
+      filterType: 'text'
     },
     { 
       key: 'lineNo', 
@@ -227,7 +246,9 @@ const BillingTable: React.FC<BillingTableProps> = ({ bills }) => {
       isEditable: true,
       width: 10,
       priority: 8,
-      sequence: 8
+      sequence: 8,
+      filterable: true,
+      filterType: 'text'
     }
   ];
 
