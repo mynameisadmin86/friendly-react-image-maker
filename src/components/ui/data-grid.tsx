@@ -863,7 +863,11 @@ const DataGrid = ({
                         >
                           <div 
                             className={`flex items-center gap-1 ${column.sortable === false ? '' : 'cursor-pointer'}`}
-                            onClick={() => column.sortable === false ? undefined : handleSort(column.key)}
+                            onClick={() => {
+                              if (column.sortable !== false) {
+                                handleSort(column.key);
+                              }
+                            }}
                           >
                             {column.header}
                             {column.sortable !== false && (
