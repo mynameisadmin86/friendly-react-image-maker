@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Table, 
@@ -863,13 +862,14 @@ const DataGrid = ({
                           }}
                         >
                           <div 
-                            className={`flex items-center gap-1 ${column.sortable !== false ? 'cursor-pointer' : ''}`}
-                            onClick={() => column.sortable !== false && handleSort(column.key)}
+                            className={`flex items-center gap-1 ${column.sortable === false ? '' : 'cursor-pointer'}`}
+                            onClick={() => column.sortable === false ? undefined : handleSort(column.key)}
                           >
                             {column.header}
                             {column.sortable !== false && (
                               <ArrowDownUp 
                                 className={`h-4 w-4 ${sortState.column === column.key ? 'text-logistics-blue' : 'text-gray-400'}`} 
+                                aria-label="Sort column"
                               />
                             )}
                             {column.mandatory && (
@@ -914,9 +914,9 @@ const DataGrid = ({
                                   onClick={() => toggleRowExpand(rowIndex)}
                                 >
                                   {expandedRows[rowIndex] ? (
-                                    <ChevronDown className="h-4 w-4" />
+                                    <ChevronDown className="h-4 w-4" aria-label="Collapse row" />
                                   ) : (
-                                    <ChevronRight className="h-4 w-4" />
+                                    <ChevronRight className="h-4 w-4" aria-label="Expand row" />
                                   )}
                                 </Button>
                               </TableCell>
