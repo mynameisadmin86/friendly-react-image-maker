@@ -5,11 +5,12 @@ import {
   TableCell, 
   TableHead, 
   TableHeader, 
-  TableRow 
+  TableRow,
+  TableNestedRow
 } from '@/components/ui/table';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Filter, Download, File, FileText, ArrowUpDown, Edit, Check, X, Columns, Settings } from 'lucide-react';
+import { Filter, Download, File, FileText, ArrowUpDown, Edit, Check, X, Columns, Settings, ChevronDown, ChevronUp, ChevronRight } from 'lucide-react';
 import { SearchBar } from '@/components/ui/search-bar';
 import { FilterPopup } from '@/components/ui/filter-popup';
 import { 
@@ -49,6 +50,7 @@ export interface Column {
   isEditable?: boolean;
   cell?: (value: any, row: any) => React.ReactNode;
   width?: number; // Width for resizable columns
+  priority?: number; // Priority for column display (lower = higher priority)
 }
 
 export interface DataGridProps {
@@ -75,6 +77,7 @@ export interface DataGridProps {
   };
   onRowEdit?: (rowIndex: number, key: string, value: any) => void;
   defaultEditable?: boolean;
+  maxVisibleColumns?: number; // Maximum number of columns to show before nesting
 }
 
 export interface EditableCellProps {
@@ -156,10 +159,12 @@ const DataGrid = ({
   pagination,
   onRowEdit,
   defaultEditable = true,
+  maxVisibleColumns = 5, // Default to showing 5 columns before nesting
 }: DataGridProps) => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
   const [sortState, setSortState] = useState<SortState>({ column: null, direction: null });
+  const [expandedRows, setExpandedRows] = useState<Record<number, boolean>>({});
   
   // State for visible columns
   const [visibleColumns, setVisibleColumns] = useState<string[]>(
@@ -170,6 +175,18 @@ const DataGrid = ({
   const filteredColumns = initialColumns.filter(col => 
     visibleColumns.includes(col.key)
   );
+
+  // Separate columns into main and nested based on maxVisibleColumns
+  const mainColumns = filteredColumns.slice(0, maxVisibleColumns);
+  const hasNestedColumns = filteredColumns.length > maxVisibleColumns;
+  const nestedColumns = hasNestedColumns ? filteredColumns.slice(maxVisibleColumns) : [];
+
+  const toggleRowExpand = (rowIndex: number) => {
+    setExpandedRows(prev => ({
+      ...prev,
+      [rowIndex]: !prev[rowIndex]
+    }));
+  };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -407,10 +424,16 @@ const DataGrid = ({
           <Table>
             {children || (
               <>
-                {filteredColumns.length > 0 && (
+                {mainColumns.length > 0 && (
                   <TableHeader>
                     <TableRow>
-                      {filteredColumns.map((column, index) => (
+                      {/* Add an expand column if we have nested columns */}
+                      {hasNestedColumns && (
+                        <TableHead className="w-8 px-2">
+                          <span className="sr-only">Expand</span>
+                        </TableHead>
+                      )}
+                      {mainColumns.map((column, index) => (
                         <TableHead 
                           key={column.key}
                           style={{ 
@@ -436,37 +459,88 @@ const DataGrid = ({
                   <TableBody>
                     {data.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={filteredColumns?.length || 1} className="h-24 text-center">
+                        <TableCell colSpan={hasNestedColumns ? mainColumns.length + 1 : mainColumns.length} className="h-24 text-center">
                           No data found
                         </TableCell>
                       </TableRow>
                     ) : (
                       data.map((row, rowIndex) => (
-                        <TableRow key={rowIndex} className="group">
-                          {filteredColumns?.map((column) => (
-                            <TableCell 
-                              key={column.key}
-                              style={{ 
-                                width: column.width ? `${column.width}%` : 'auto',
-                                minWidth: '80px'
-                              }}
-                            >
-                              {column.cell ? column.cell(row[column.key], row) : (
-                                onRowEdit ? (
-                                  <EditableCell
-                                    value={row[column.key]}
-                                    rowIndex={rowIndex}
-                                    columnKey={column.key}
-                                    isEditable={column.isEditable !== undefined ? column.isEditable : defaultEditable}
-                                    onEdit={onRowEdit}
-                                  />
-                                ) : (
-                                  row[column.key]
-                                )
-                              )}
-                            </TableCell>
-                          ))}
-                        </TableRow>
+                        <React.Fragment key={rowIndex}>
+                          <TableRow className="group">
+                            {/* Expansion toggle button */}
+                            {hasNestedColumns && (
+                              <TableCell className="w-8 px-2 relative">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 p-0 hover:bg-muted rounded-full"
+                                  onClick={() => toggleRowExpand(rowIndex)}
+                                >
+                                  {expandedRows[rowIndex] ? (
+                                    <ChevronDown className="h-4 w-4" />
+                                  ) : (
+                                    <ChevronRight className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </TableCell>
+                            )}
+                            
+                            {/* Main columns */}
+                            {mainColumns.map((column) => (
+                              <TableCell 
+                                key={column.key}
+                                style={{ 
+                                  width: column.width ? `${column.width}%` : 'auto',
+                                  minWidth: '80px'
+                                }}
+                              >
+                                {column.cell ? column.cell(row[column.key], row) : (
+                                  onRowEdit ? (
+                                    <EditableCell
+                                      value={row[column.key]}
+                                      rowIndex={rowIndex}
+                                      columnKey={column.key}
+                                      isEditable={column.isEditable !== undefined ? column.isEditable : defaultEditable}
+                                      onEdit={onRowEdit}
+                                    />
+                                  ) : (
+                                    row[column.key]
+                                  )
+                                )}
+                              </TableCell>
+                            ))}
+                          </TableRow>
+                          
+                          {/* Nested row with additional columns */}
+                          {hasNestedColumns && (
+                            <TableNestedRow isOpen={expandedRows[rowIndex]}>
+                              <TableCell colSpan={mainColumns.length + 1}>
+                                <div className="p-2 grid grid-cols-2 gap-4 pl-8">
+                                  {nestedColumns.map((column) => (
+                                    <div key={column.key} className="flex flex-col space-y-1">
+                                      <span className="text-sm font-medium text-muted-foreground">{column.header}</span>
+                                      <div>
+                                        {column.cell ? column.cell(row[column.key], row) : (
+                                          onRowEdit ? (
+                                            <EditableCell
+                                              value={row[column.key]}
+                                              rowIndex={rowIndex}
+                                              columnKey={column.key}
+                                              isEditable={column.isEditable !== undefined ? column.isEditable : defaultEditable}
+                                              onEdit={onRowEdit}
+                                            />
+                                          ) : (
+                                            row[column.key]
+                                          )
+                                        )}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </TableCell>
+                            </TableNestedRow>
+                          )}
+                        </React.Fragment>
                       ))
                     )}
                   </TableBody>

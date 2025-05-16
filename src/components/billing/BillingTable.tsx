@@ -135,13 +135,15 @@ const BillingTable: React.FC<BillingTableProps> = ({ bills }) => {
     { name: 'contractType', label: 'Contract Type', type: 'text' as const }
   ];
 
-  // Define dynamic columns - optimized widths for better data display without scrolling
+  // Define columns with priority for better display organization
+  // First 5 columns will be shown in main row, others in nested view
   const columns: Column[] = [
     { 
       key: 'id', 
       header: 'Quick Billing No.',
       isEditable: true,
       width: 15,
+      priority: 1,
       cell: (value, row) => (
         <div>
           <div className="font-medium text-sm">{value}</div>
@@ -154,6 +156,7 @@ const BillingTable: React.FC<BillingTableProps> = ({ bills }) => {
       header: 'Status',
       isEditable: true,
       width: 10,
+      priority: 1,
       cell: (value) => <StatusBadge status={value} />
     },
     { 
@@ -161,6 +164,7 @@ const BillingTable: React.FC<BillingTableProps> = ({ bills }) => {
       header: 'Customer/Supplier',
       isEditable: true,
       width: 15,
+      priority: 1,
       cell: (value, row) => (
         <div>
           <div className="font-medium text-sm">{value}</div>
@@ -173,6 +177,7 @@ const BillingTable: React.FC<BillingTableProps> = ({ bills }) => {
       header: 'Contract Type',
       isEditable: true,
       width: 15,
+      priority: 2,
       cell: (value, row) => (
         <div>
           <div className="font-medium text-sm">{value}</div>
@@ -184,13 +189,15 @@ const BillingTable: React.FC<BillingTableProps> = ({ bills }) => {
       key: 'totalNetAmount', 
       header: 'Total Net',
       isEditable: true,
-      width: 10
+      width: 10,
+      priority: 3
     },
     { 
       key: 'billingType', 
       header: 'Billing Type',
       isEditable: true,
       width: 15,
+      priority: 6,
       cell: (value, row) => (
         <div>
           <div className="font-medium text-sm">{value}</div>
@@ -203,6 +210,7 @@ const BillingTable: React.FC<BillingTableProps> = ({ bills }) => {
       header: 'Group Net',
       isEditable: true,
       width: 10,
+      priority: 7,
       cell: (value, row) => (
         <div>
           <div className="font-medium text-sm">{value}</div>
@@ -214,7 +222,8 @@ const BillingTable: React.FC<BillingTableProps> = ({ bills }) => {
       key: 'lineNo', 
       header: 'Line #',
       isEditable: true,
-      width: 10
+      width: 10,
+      priority: 8
     }
   ];
 
@@ -236,6 +245,7 @@ const BillingTable: React.FC<BillingTableProps> = ({ bills }) => {
       }}
       onRowEdit={handleRowEdit}
       defaultEditable={true}
+      maxVisibleColumns={5} // Show maximum 5 columns before nesting
     />
   );
 };
