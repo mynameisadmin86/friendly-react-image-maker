@@ -954,7 +954,7 @@ const DataGrid = ({
                           
                           {/* Nested row with additional columns */}
                           {hasNestedColumns && (
-                            <TableNestedRow isOpen={Boolean(expandedRows[rowIndex])}>
+                            <TableNestedRow isOpen={!!expandedRows[rowIndex]}>
                               <TableCell colSpan={mainColumns.length + 1}>
                                 <div className="p-2 grid grid-cols-2 md:grid-cols-3 gap-4 pl-8">
                                   {nestedColumns.map((column) => (
