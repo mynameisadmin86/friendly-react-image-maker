@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,6 +7,7 @@ import { DataGrid, SortState, Column } from '@/components/ui/data-grid';
 import Breadcrumb from '@/components/Breadcrumb';
 import StatusBadge from '@/components/StatusBadge';
 import { Package } from 'lucide-react';
+import { toast } from 'sonner';
 
 // Mock data for shipment items
 interface ShipmentItem {
@@ -80,16 +82,14 @@ const ShipmentsPage = () => {
   };
 
   const handleSearch = () => {
-    console.log('Searching shipments');
+    toast.info('Advanced search functionality');
   };
 
   const handleClearSearch = () => {
-    console.log('Clearing shipment search');
+    toast.info('Search cleared');
   };
 
   const handleTableSearch = (value: string) => {
-    console.log('Table search:', value);
-    
     if (value.trim() === '') {
       setFilteredShipments(shipments);
     } else {
@@ -106,8 +106,6 @@ const ShipmentsPage = () => {
   };
 
   const handleFilter = (filters: any) => {
-    console.log('Filters applied:', filters);
-    
     let filtered = [...shipments];
     
     if (filters.origin) {
@@ -158,9 +156,13 @@ const ShipmentsPage = () => {
     setFilteredShipments(sortedShipments);
   };
 
-  const handleExport = (format: 'pdf' | 'excel') => {
-    console.log(`Exporting as ${format}`);
-    alert(`Exporting data as ${format.toUpperCase()}`);
+  const handleExport = (format: 'pdf' | 'excel' | 'csv') => {
+    toast.success(`Exporting data as ${format.toUpperCase()}`);
+  };
+
+  const handleImport = (importedData: any[]) => {
+    toast.success(`Imported ${importedData.length} shipment records`);
+    setShipments(prev => [...prev, ...importedData]);
   };
 
   const handlePageChange = (page: number) => {
@@ -168,14 +170,13 @@ const ShipmentsPage = () => {
   };
 
   const handleRowEdit = (rowIndex: number, key: string, value: any) => {
-    console.log(`Editing row ${rowIndex}, field ${key} to value: ${value}`);
-    
     const newShipments = [...filteredShipments];
     const actualIndex = indexOfFirstItem + rowIndex;
     
     if (newShipments[actualIndex] && key in newShipments[actualIndex]) {
       (newShipments[actualIndex] as any)[key] = value;
       setFilteredShipments(newShipments);
+      toast.success(`Updated ${key} to "${value}"`);
     }
   };
 
@@ -203,12 +204,14 @@ const ShipmentsPage = () => {
     }
   ];
 
-  // Define columns for the DataGrid - all set to editable
+  // Define columns for the DataGrid with enhanced features
   const columns: Column[] = [
     { 
       key: 'id', 
-      header: 'Shipment ID',
-      isEditable: true,
+      header: 'Shipment #',
+      isEditable: false,
+      sequence: 1,
+      mandatory: true,
       cell: (value, row) => (
         <div>
           <div className="font-medium text-sm">{value}</div>
@@ -220,12 +223,14 @@ const ShipmentsPage = () => {
       key: 'status', 
       header: 'Status',
       isEditable: true,
+      sequence: 2,
       cell: (value) => <StatusBadge status={value} />
     },
     { 
       key: 'origin', 
-      header: 'Origin/Destination',
+      header: 'Origin',
       isEditable: true,
+      sequence: 3,
       cell: (value, row) => (
         <div>
           <div className="font-medium text-sm">{value}</div>
@@ -234,9 +239,16 @@ const ShipmentsPage = () => {
       )
     },
     { 
-      key: 'type', 
-      header: 'Type/Weight',
+      key: 'destination', 
+      header: 'Destination',
       isEditable: true,
+      sequence: 4
+    },
+    { 
+      key: 'type', 
+      header: 'Type',
+      isEditable: true,
+      sequence: 5,
       cell: (value, row) => (
         <div>
           <div className="font-medium text-sm">{value}</div>
@@ -245,14 +257,22 @@ const ShipmentsPage = () => {
       )
     },
     { 
+      key: 'weight', 
+      header: 'Weight',
+      isEditable: true,
+      sequence: 6
+    },
+    { 
       key: 'customer', 
       header: 'Customer',
-      isEditable: true
+      isEditable: true,
+      sequence: 7
     },
     { 
       key: 'eta', 
       header: 'ETA',
-      isEditable: true 
+      isEditable: true,
+      sequence: 8
     }
   ];
 
@@ -311,6 +331,7 @@ const ShipmentsPage = () => {
         onSearch={handleTableSearch}
         onFilter={handleFilter}
         onExport={handleExport}
+        onImport={handleImport}
         onSortChange={handleSort}
         filterFields={filterFields}
         pagination={{
@@ -319,6 +340,8 @@ const ShipmentsPage = () => {
           onPageChange: handlePageChange
         }}
         onRowEdit={handleRowEdit}
+        maxVisibleColumns={5}
+        mandatoryColumns={['id']}
       />
     </div>
   );
