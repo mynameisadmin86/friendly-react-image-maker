@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Table, 
@@ -954,7 +955,7 @@ const DataGrid = ({
                           
                           {/* Nested row with additional columns */}
                           {hasNestedColumns && (
-                            <TableNestedRow isOpen={!!expandedRows[rowIndex]}>
+                            <TableNestedRow isOpen={Boolean(expandedRows[rowIndex])}>
                               <TableCell colSpan={mainColumns.length + 1}>
                                 <div className="p-2 grid grid-cols-2 md:grid-cols-3 gap-4 pl-8">
                                   {nestedColumns.map((column) => (
