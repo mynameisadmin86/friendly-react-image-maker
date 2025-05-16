@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Table, 
@@ -596,7 +597,12 @@ const DataGrid = ({
                 fields={filterFields}
                 onApplyFilter={handleFilterApply}
                 triggerElement={
-                  <Button variant="outline" size="icon" onClick={handleFilterButtonClick} title="Filter data">
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    onClick={handleFilterButtonClick} 
+                    aria-label="Filter data"
+                  >
                     <Filter className="h-4 w-4" />
                   </Button>
                 }
@@ -606,7 +612,11 @@ const DataGrid = ({
             {/* Column visibility and sequencing dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" title="Columns settings">
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  aria-label="Columns settings"
+                >
                   <Columns className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -645,7 +655,7 @@ const DataGrid = ({
                         >
                           {column.header}
                           {column.mandatory && (
-                            <CheckCircle2 className="h-3 w-3 text-green-500" title="Mandatory column" />
+                            <CheckCircle2 className="h-3 w-3 text-green-500" aria-label="Mandatory column" />
                           )}
                         </label>
                       </div>
@@ -676,7 +686,11 @@ const DataGrid = ({
             {/* Import/Export dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" title="Import/Export">
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  aria-label="Import/Export"
+                >
                   <Download className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -740,7 +754,7 @@ const DataGrid = ({
                               />
                             )}
                             {column.mandatory && (
-                              <CheckCircle2 className="h-3 w-3 ml-1 text-green-500" title="Mandatory column" />
+                              <CheckCircle2 className="h-3 w-3 ml-1 text-green-500" aria-label="Mandatory column" />
                             )}
                           </div>
                         </TableHead>
@@ -806,7 +820,7 @@ const DataGrid = ({
                           
                           {/* Nested row with additional columns */}
                           {hasNestedColumns && (
-                            <TableNestedRow isOpen={expandedRows[rowIndex]}>
+                            <TableNestedRow isOpen={!!expandedRows[rowIndex]}>
                               <TableCell colSpan={mainColumns.length + 1}>
                                 <div className="p-2 grid grid-cols-2 md:grid-cols-3 gap-4 pl-8">
                                   {nestedColumns.map((column) => (
@@ -814,7 +828,7 @@ const DataGrid = ({
                                       <span className="text-sm font-medium text-muted-foreground">
                                         {column.header}
                                         {column.mandatory && (
-                                          <CheckCircle2 className="inline h-3 w-3 ml-1 text-green-500" title="Mandatory column" />
+                                          <CheckCircle2 className="inline h-3 w-3 ml-1 text-green-500" aria-label="Mandatory column" />
                                         )}
                                       </span>
                                       <div>
@@ -896,3 +910,4 @@ export const SequencableColumn: React.FC<{
 };
 
 export { DataGrid };
+
