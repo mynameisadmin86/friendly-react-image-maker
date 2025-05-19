@@ -53,7 +53,6 @@ const DataGrid = ({
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [showColumnFilters, setShowColumnFilters] = useState(false);
   const [isDraggingColumn, setIsDraggingColumn] = useState<string | null>(null);
-  const [sourceColumnKey, setSourceColumnKey] = useState<string | null>(null);
   
   // State for visible columns
   const [visibleColumns, setVisibleColumns] = useState<string[]>(
@@ -423,7 +422,7 @@ const DataGrid = ({
                                   {null}
                                 </SortableHeader>
                               )}
-                              {/* Fix: Changed the comparison to use explicit boolean value */}
+                              {/* Fix: Using proper type check instead of truthy/falsy check */}
                               {column.mandatory === true && (
                                 <CheckCircle2 className="h-3 w-3 ml-1 text-green-500" aria-label="Mandatory column" />
                               )}
@@ -519,7 +518,7 @@ const DataGrid = ({
                                     <div key={column.key} className="flex flex-col space-y-1">
                                       <span className="text-sm font-medium text-muted-foreground">
                                         {column.header}
-                                        {/* Fix: Changed the comparison to use explicit boolean value */}
+                                        {/* Fix: Using proper type check instead of truthy/falsy check */}
                                         {column.mandatory === true && (
                                           <CheckCircle2 className="inline h-3 w-3 ml-1 text-green-500" aria-label="Mandatory column" />
                                         )}
