@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Table, 
@@ -26,7 +25,8 @@ import {
   ChevronUp, 
   ChevronRight, 
   Upload, 
-  CheckCircle2
+  CheckCircle2,
+  MoveHorizontal
 } from 'lucide-react';
 import { SearchBar } from '@/components/ui/search-bar';
 import { FilterPopup } from '@/components/ui/filter-popup';
@@ -250,6 +250,7 @@ const DataGrid = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [showColumnFilters, setShowColumnFilters] = useState(false);
+  const [isDraggingColumn, setIsDraggingColumn] = useState<string | null>(null);
   
   // State for visible columns
   const [visibleColumns, setVisibleColumns] = useState<string[]>(
@@ -861,25 +862,42 @@ const DataGrid = ({
                             width: column.width ? `${column.width}%` : 'auto',
                             minWidth: '80px'
                           }}
+                          draggable 
+                          onDragStart={() => handleDragStart(column.key)}
+                          onDragOver={handleDragOver}
+                          onDrop={() => handleDrop(column.key)}
+                          onDragEnd={handleDragEnd}
+                          className={isDraggingColumn === column.key ? 'opacity-50' : ''}
                         >
-                          <div 
-                            className={`flex items-center gap-1 ${column.sortable === false ? '' : 'cursor-pointer'}`}
-                            onClick={() => {
-                              if (column.sortable !== false) {
-                                handleSort(column.key);
-                              }
-                            }}
-                          >
-                            {column.header}
-                            {column.sortable !== false && (
-                              <ArrowDownUp 
-                                className={`h-4 w-4 ${sortState.column === column.key ? 'text-logistics-blue' : 'text-gray-400'}`} 
-                                aria-label="Sort column"
-                              />
-                            )}
-                            {column.mandatory && (
-                              <CheckCircle2 className="h-3 w-3 ml-1 text-green-500" aria-label="Mandatory column" />
-                            )}
+                          <div className="flex items-center justify-between">
+                            <div 
+                              className={`flex items-center gap-1 ${column.sortable === false ? '' : 'cursor-pointer'}`}
+                              onClick={() => {
+                                if (column.sortable !== false) {
+                                  handleSort(column.key);
+                                }
+                              }}
+                            >
+                              {column.header}
+                              {column.sortable !== false && (
+                                <ArrowDownUp 
+                                  className={`h-4 w-4 ${sortState.column === column.key ? 'text-logistics-blue' : 'text-gray-400'}`} 
+                                  aria-label="Sort column"
+                                />
+                              )}
+                              {column.mandatory && (
+                                <CheckCircle2 className="h-3 w-3 ml-1 text-green-500" aria-label="Mandatory column" />
+                              )}
+                            </div>
+                            
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-6 w-6 opacity-0 group-hover:opacity-100 hover:opacity-100"
+                              title="Drag to reorder"
+                            >
+                              <MoveHorizontal className="h-3 w-3 text-gray-400" />
+                            </Button>
                           </div>
                           
                           {/* Column filter */}

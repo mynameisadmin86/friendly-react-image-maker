@@ -122,6 +122,10 @@ const BillingTable: React.FC<BillingTableProps> = ({ bills }) => {
     }
   };
 
+  const handleColumnReorder = () => {
+    toast.success('Column order updated');
+  };
+
   const filterFields = [
     { 
       name: 'status', 
