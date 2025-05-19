@@ -23,7 +23,12 @@ export const useDragDropHandlers = (
 
   const handleDrop = (targetColumnKey: string) => {
     setIsDraggingColumn(null);
-    updateColumnSequence(targetColumnKey);
+    // Here's the fix: we need to pass both the source and target column keys
+    // We'll use the current dragging column as the source
+    const sourceColumnKey = columns.find(col => col.key === targetColumnKey)?.key;
+    if (sourceColumnKey) {
+      updateColumnSequence(sourceColumnKey, targetColumnKey);
+    }
   };
 
   const handleDragEnd = () => {
