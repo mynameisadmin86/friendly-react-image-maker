@@ -38,8 +38,11 @@ export const DataGrid: React.FC<DataGridProps> = ({
   const [sortState, setSortState] = useState<SortState>({ column: null, direction: null });
   const [expandedRows, setExpandedRows] = useState<Record<number, boolean>>({});
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
-  const [showColumnFilters, setShowColumnFilters] = useState(false);
+  const [showColumnFilters, setShowColumnFilters] = useState(true); // Always show filters by default
   const [visibleColumns, setVisibleColumns] = useState<string[]>(
+    initialColumns.map(col => col.key)
+  );
+  const [columnOrder, setColumnOrder] = useState<string[]>(
     initialColumns.map(col => col.key)
   );
   
@@ -47,29 +50,32 @@ export const DataGrid: React.FC<DataGridProps> = ({
 
   // Memoized column processing
   const preparedColumns = useMemo(() => {
-    console.log('Processing columns with mandatory flags');
+    console.log('Processing columns with mandatory flags and ordering');
     return initialColumns.map((col, index) => ({
       ...col,
       sequence: col.sequence !== undefined ? col.sequence : index,
       mandatory: col.mandatory !== undefined ? col.mandatory : 
                  mandatoryColumns.includes(col.key) || 
-                 (index === 0 && mandatoryColumns.length === 0)
+                 (index === 0 && mandatoryColumns.length === 0),
+      filterable: col.filterable !== false // Enable filtering by default
     }));
   }, [initialColumns, mandatoryColumns]);
 
-  const sortedColumns = useMemo(() => {
-    return [...preparedColumns].sort((a, b) => 
-      (a.sequence || 0) - (b.sequence || 0)
-    );
-  }, [preparedColumns]);
+  const orderedColumns = useMemo(() => {
+    // Order columns based on columnOrder state
+    const columnMap = new Map(preparedColumns.map(col => [col.key, col]));
+    return columnOrder
+      .map(key => columnMap.get(key))
+      .filter(Boolean) as typeof preparedColumns;
+  }, [preparedColumns, columnOrder]);
   
   const filteredColumns = useMemo(() => 
-    sortedColumns.filter(col => visibleColumns.includes(col.key)),
-    [sortedColumns, visibleColumns]
+    orderedColumns.filter(col => visibleColumns.includes(col.key)),
+    [orderedColumns, visibleColumns]
   );
 
   const filteredData = useMemo(() => {
-    if (!showColumnFilters || Object.keys(columnFilters).length === 0) {
+    if (Object.keys(columnFilters).length === 0) {
       return data;
     }
     
@@ -82,7 +88,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
         return itemValue.includes(filterValue.toLowerCase());
       });
     });
-  }, [data, columnFilters, showColumnFilters]);
+  }, [data, columnFilters]);
 
   const mainColumns = useMemo(() => filteredColumns.slice(0, maxVisibleColumns), [filteredColumns, maxVisibleColumns]);
   const hasNestedColumns = filteredColumns.length > maxVisibleColumns;
@@ -151,6 +157,18 @@ export const DataGrid: React.FC<DataGridProps> = ({
       setColumnFilters({});
     }
   }, [showColumnFilters]);
+
+  const handleColumnReorder = useCallback((dragIndex: number, hoverIndex: number) => {
+    console.log(`Reordering column from ${dragIndex} to ${hoverIndex}`);
+    setColumnOrder(prevOrder => {
+      const newOrder = [...prevOrder];
+      const draggedItem = newOrder[dragIndex];
+      newOrder.splice(dragIndex, 1);
+      newOrder.splice(hoverIndex, 0, draggedItem);
+      return newOrder;
+    });
+    toast.success('Column order updated');
+  }, []);
 
   const toggleColumn = useCallback((columnKey: string) => {
     const columnToToggle = preparedColumns.find(col => col.key === columnKey);
@@ -318,7 +336,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
           filterFields={filterFields}
           showColumnFilters={showColumnFilters}
           onToggleColumnFilters={toggleColumnFilters}
-          sortedColumns={sortedColumns}
+          sortedColumns={orderedColumns}
           visibleColumns={visibleColumns}
           onToggleColumn={toggleColumn}
           onToggleAllColumns={toggleAllColumns}
@@ -340,6 +358,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
                   showColumnFilters={showColumnFilters}
                   columnFilters={columnFilters}
                   onColumnFilterChange={handleColumnFilterChange}
+                  onColumnReorder={handleColumnReorder}
                 />
                 <DataGridTableBody
                   filteredData={filteredData}
@@ -368,6 +387,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
         ref={fileInputRef}
         type="file"
         accept=".csv"
+        onChange={handleFileImport}
         className="hidden"
       />
     </>

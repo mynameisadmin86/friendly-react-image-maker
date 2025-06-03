@@ -47,11 +47,11 @@ export const DataGridTableBody: React.FC<DataGridTableBodyProps> = ({
         <React.Fragment key={rowIndex}>
           <TableRow className="group">
             {hasNestedColumns && (
-              <TableCell className="w-8 px-2 relative">
+              <TableCell className="w-[120px] min-w-[120px] px-4 relative">
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-6 w-6 p-0 hover:bg-muted rounded-full"
+                  className="h-8 w-8 p-0 hover:bg-muted rounded-full"
                   onClick={() => onToggleRowExpand(rowIndex)}
                 >
                   {expandedRows[rowIndex] ? (
@@ -68,7 +68,7 @@ export const DataGridTableBody: React.FC<DataGridTableBodyProps> = ({
                 key={column.key}
                 style={{ 
                   width: column.width ? `${column.width}%` : 'auto',
-                  minWidth: '80px'
+                  minWidth: '120px'
                 }}
               >
                 {column.cell ? column.cell(row[column.key], row) : (
@@ -81,7 +81,7 @@ export const DataGridTableBody: React.FC<DataGridTableBodyProps> = ({
                       onEdit={onRowEdit}
                     />
                   ) : (
-                    row[column.key]
+                    <span className="text-sm">{row[column.key]}</span>
                   )
                 )}
               </TableCell>
@@ -91,16 +91,18 @@ export const DataGridTableBody: React.FC<DataGridTableBodyProps> = ({
           {hasNestedColumns && (
             <TableNestedRow isOpen={Boolean(expandedRows[rowIndex])}>
               <TableCell colSpan={mainColumns.length + 1}>
-                <div className="p-2 grid grid-cols-2 md:grid-cols-3 gap-4 pl-8">
+                <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pl-8 bg-muted/10 border-l-4 border-l-primary/20">
                   {nestedColumns.map((column) => (
-                    <div key={column.key} className="flex flex-col space-y-1">
-                      <span className="text-sm font-medium text-muted-foreground">
-                        {column.header}
+                    <div key={column.key} className="flex flex-col space-y-2 min-w-0">
+                      <div className="flex items-center gap-1">
+                        <span className="text-sm font-medium text-muted-foreground">
+                          {column.header}
+                        </span>
                         {column.mandatory && (
-                          <CheckCircle2 className="inline h-3 w-3 ml-1 text-green-500" aria-label="Mandatory column" />
+                          <CheckCircle2 className="inline h-3 w-3 text-green-500" aria-label="Mandatory column" />
                         )}
-                      </span>
-                      <div>
+                      </div>
+                      <div className="min-w-0">
                         {column.cell ? column.cell(row[column.key], row) : (
                           onRowEdit && column.isEditable ? (
                             <EditableCell
@@ -111,7 +113,7 @@ export const DataGridTableBody: React.FC<DataGridTableBodyProps> = ({
                               onEdit={onRowEdit}
                             />
                           ) : (
-                            row[column.key]
+                            <span className="text-sm break-words">{row[column.key]}</span>
                           )
                         )}
                       </div>

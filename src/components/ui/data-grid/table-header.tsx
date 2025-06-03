@@ -1,7 +1,7 @@
 
 import React, { useCallback } from 'react';
 import { TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowUp, ArrowDown, ArrowUpDown, CheckCircle2 } from 'lucide-react';
+import { ArrowUp, ArrowDown, ArrowUpDown, CheckCircle2, GripVertical } from 'lucide-react';
 import { ColumnFilter } from './column-filter';
 import { Column, SortState } from './types';
 
@@ -13,6 +13,7 @@ interface DataGridTableHeaderProps {
   showColumnFilters: boolean;
   columnFilters: Record<string, string>;
   onColumnFilterChange: (key: string, value: string) => void;
+  onColumnReorder?: (dragIndex: number, hoverIndex: number) => void;
 }
 
 export const DataGridTableHeader: React.FC<DataGridTableHeaderProps> = ({
@@ -22,7 +23,8 @@ export const DataGridTableHeader: React.FC<DataGridTableHeaderProps> = ({
   onSort,
   showColumnFilters,
   columnFilters,
-  onColumnFilterChange
+  onColumnFilterChange,
+  onColumnReorder
 }) => {
   console.log('DataGridTableHeader rendered with', mainColumns.length, 'columns');
 
@@ -54,50 +56,68 @@ export const DataGridTableHeader: React.FC<DataGridTableHeaderProps> = ({
     <TableHeader>
       <TableRow>
         {hasNestedColumns && (
-          <TableHead className="w-8 px-2">
-            <span className="sr-only">Expand</span>
+          <TableHead className="w-[120px] min-w-[120px] px-4">
+            <div className="space-y-2">
+              <div className="flex items-center gap-1">
+                <span className="sr-only">Expand</span>
+              </div>
+              {showColumnFilters && (
+                <div className="h-7"></div>
+              )}
+            </div>
           </TableHead>
         )}
-        {mainColumns.map((column) => (
+        {mainColumns.map((column, index) => (
           <TableHead 
             key={column.key}
+            className="relative"
             style={{ 
               width: column.width ? `${column.width}%` : 'auto',
-              minWidth: '80px'
+              minWidth: '120px'
             }}
           >
             <div className="space-y-2">
-              <div 
-                className={`flex items-center gap-1 ${
-                  column.sortable !== false ? 'cursor-pointer hover:text-primary' : ''
-                }`}
-                onClick={() => {
-                  if (column.sortable !== false) {
-                    handleSort(column.key);
-                  }
-                }}
-                role={column.sortable !== false ? 'button' : undefined}
-                tabIndex={column.sortable !== false ? 0 : undefined}
-                onKeyDown={(e) => {
-                  if (column.sortable !== false && (e.key === 'Enter' || e.key === ' ')) {
-                    e.preventDefault();
-                    handleSort(column.key);
-                  }
-                }}
-              >
-                <span className="font-medium text-sm">{column.header}</span>
-                {column.sortable !== false && getSortIcon(column.key)}
-                {column.mandatory && (
-                  <CheckCircle2 className="h-3 w-3 ml-1 text-green-500" aria-label="Mandatory column" />
+              <div className="flex items-center gap-1">
+                {onColumnReorder && (
+                  <GripVertical 
+                    className="h-4 w-4 text-gray-400 cursor-move hover:text-gray-600" 
+                    aria-label="Drag to reorder column"
+                  />
                 )}
+                <div 
+                  className={`flex items-center gap-1 flex-1 ${
+                    column.sortable !== false ? 'cursor-pointer hover:text-primary' : ''
+                  }`}
+                  onClick={() => {
+                    if (column.sortable !== false) {
+                      handleSort(column.key);
+                    }
+                  }}
+                  role={column.sortable !== false ? 'button' : undefined}
+                  tabIndex={column.sortable !== false ? 0 : undefined}
+                  onKeyDown={(e) => {
+                    if (column.sortable !== false && (e.key === 'Enter' || e.key === ' ')) {
+                      e.preventDefault();
+                      handleSort(column.key);
+                    }
+                  }}
+                >
+                  <span className="font-medium text-sm">{column.header}</span>
+                  {column.sortable !== false && getSortIcon(column.key)}
+                  {column.mandatory && (
+                    <CheckCircle2 className="h-3 w-3 ml-1 text-green-500" aria-label="Mandatory column" />
+                  )}
+                </div>
               </div>
               
-              {showColumnFilters && column.filterable && (
-                <ColumnFilter
-                  column={column}
-                  onFilterChange={onColumnFilterChange}
-                  currentValue={columnFilters[column.key] || ''}
-                />
+              {showColumnFilters && (
+                <div className="w-full">
+                  <ColumnFilter
+                    column={column}
+                    onFilterChange={onColumnFilterChange}
+                    currentValue={columnFilters[column.key] || ''}
+                  />
+                </div>
               )}
             </div>
           </TableHead>

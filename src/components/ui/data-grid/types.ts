@@ -33,6 +33,7 @@ export interface DataGridProps {
   onImport?: (data: any[]) => void;
   showToolbar?: boolean;
   onSortChange?: (sortState: SortState) => void;
+  onColumnReorder?: (dragIndex: number, hoverIndex: number) => void;
   filterFields?: {
     name: string;
     label: string;
