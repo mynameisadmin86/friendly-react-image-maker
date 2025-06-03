@@ -72,12 +72,12 @@ export const DataGridTableBody: React.FC<DataGridTableBodyProps> = ({
                 }}
               >
                 {column.cell ? column.cell(row[column.key], row) : (
-                  onRowEdit && column.isEditable !== false ? (
+                  onRowEdit && column.isEditable ? (
                     <EditableCell
                       value={row[column.key]}
                       rowIndex={rowIndex}
                       columnKey={column.key}
-                      isEditable={column.isEditable !== false}
+                      isEditable={Boolean(column.isEditable)}
                       onEdit={onRowEdit}
                     />
                   ) : (
@@ -102,12 +102,12 @@ export const DataGridTableBody: React.FC<DataGridTableBodyProps> = ({
                       </span>
                       <div>
                         {column.cell ? column.cell(row[column.key], row) : (
-                          onRowEdit && column.isEditable !== false ? (
+                          onRowEdit && column.isEditable ? (
                             <EditableCell
                               value={row[column.key]}
                               rowIndex={rowIndex}
                               columnKey={column.key}
-                              isEditable={column.isEditable !== false}
+                              isEditable={Boolean(column.isEditable)}
                               onEdit={onRowEdit}
                             />
                           ) : (
