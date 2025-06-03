@@ -3,7 +3,11 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Bell, Search, Phone } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { 
+  Avatar as UIAvatar, 
+  AvatarFallback, 
+  AvatarImage 
+} from '@/components/ui/avatar';
 
 const AppHeader = () => {
   return (
@@ -23,10 +27,10 @@ const AppHeader = () => {
         <Button variant="ghost" size="icon" className="rounded-full">
           <Bell className="h-5 w-5 text-gray-500" />
         </Button>
-        <Avatar className="h-9 w-9 border">
+        <UIAvatar className="h-9 w-9 border">
           <AvatarImage src="" />
           <AvatarFallback>JD</AvatarFallback>
-        </Avatar>
+        </UIAvatar>
       </div>
     </header>
   );
