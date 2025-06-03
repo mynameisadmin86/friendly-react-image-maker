@@ -1,5 +1,4 @@
-
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useMemo, useCallback } from 'react';
 import { Table } from '@/components/ui/table';
 import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
@@ -7,7 +6,7 @@ import { DataGridToolbar } from './data-grid/toolbar';
 import { DataGridTableHeader } from './data-grid/table-header';
 import { DataGridTableBody } from './data-grid/table-body';
 import { DataGridPagination } from './data-grid/pagination';
-import { DataGridProps, SortState, SortDirection, Column } from './data-grid/types';
+import { DataGridProps, SortState, SortDirection } from './data-grid/types';
 
 export * from './data-grid/types';
 export { EditableCell } from './data-grid/editable-cell';
@@ -16,7 +15,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
   title,
   count,
   columns: initialColumns = [],
-  data,
+  data = [],
   children,
   onSearch,
   onFilter,
@@ -31,21 +30,24 @@ export const DataGrid: React.FC<DataGridProps> = ({
   maxVisibleColumns = 5,
   mandatoryColumns = [],
 }) => {
-  console.log('DataGrid component rendered');
+  console.log('DataGrid component rendered with', data.length, 'items');
 
+  // State management
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
   const [sortState, setSortState] = useState<SortState>({ column: null, direction: null });
   const [expandedRows, setExpandedRows] = useState<Record<number, boolean>>({});
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const [showColumnFilters, setShowColumnFilters] = useState(false);
   const [visibleColumns, setVisibleColumns] = useState<string[]>(
     initialColumns.map(col => col.key)
   );
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Prepare columns with mandatory flag
-  const preparedColumns = React.useMemo(() => {
+  // Memoized column processing
+  const preparedColumns = useMemo(() => {
+    console.log('Processing columns with mandatory flags');
     return initialColumns.map((col, index) => ({
       ...col,
       sequence: col.sequence !== undefined ? col.sequence : index,
@@ -55,27 +57,23 @@ export const DataGrid: React.FC<DataGridProps> = ({
     }));
   }, [initialColumns, mandatoryColumns]);
 
-  // Sort columns by sequence
-  const sortedColumns = React.useMemo(() => {
+  const sortedColumns = useMemo(() => {
     return [...preparedColumns].sort((a, b) => 
       (a.sequence || 0) - (b.sequence || 0)
     );
   }, [preparedColumns]);
   
-  // Get only the columns that should be visible
-  const filteredColumns = React.useMemo(() => 
+  const filteredColumns = useMemo(() => 
     sortedColumns.filter(col => visibleColumns.includes(col.key)),
     [sortedColumns, visibleColumns]
   );
 
-  // Filter data based on column filters
-  const filteredData = React.useMemo(() => {
-    if (!data) return [];
-    
-    if (Object.keys(columnFilters).length === 0 || !showColumnFilters) {
+  const filteredData = useMemo(() => {
+    if (!showColumnFilters || Object.keys(columnFilters).length === 0) {
       return data;
     }
     
+    console.log('Applying column filters:', columnFilters);
     return data.filter(item => {
       return Object.entries(columnFilters).every(([key, filterValue]) => {
         if (!filterValue) return true;
@@ -86,71 +84,108 @@ export const DataGrid: React.FC<DataGridProps> = ({
     });
   }, [data, columnFilters, showColumnFilters]);
 
-  // Separate columns into main and nested
-  const mainColumns = filteredColumns.slice(0, maxVisibleColumns);
+  const mainColumns = useMemo(() => filteredColumns.slice(0, maxVisibleColumns), [filteredColumns, maxVisibleColumns]);
   const hasNestedColumns = filteredColumns.length > maxVisibleColumns;
-  const nestedColumns = hasNestedColumns ? filteredColumns.slice(maxVisibleColumns) : [];
+  const nestedColumns = useMemo(() => hasNestedColumns ? filteredColumns.slice(maxVisibleColumns) : [], [filteredColumns, hasNestedColumns, maxVisibleColumns]);
 
-  // Initialize with mandatory columns
-  useEffect(() => {
-    const mandatoryColumnKeys = preparedColumns
-      .filter(col => col.mandatory === true)
-      .map(col => col.key);
+  const paginatedData = useMemo(() => {
+    if (!pagination) return filteredData;
     
-    if (mandatoryColumnKeys.some(key => !visibleColumns.includes(key))) {
-      setVisibleColumns(prevVisible => {
-        const newVisible = [...prevVisible];
-        mandatoryColumnKeys.forEach(key => {
-          if (!newVisible.includes(key)) {
-            newVisible.push(key);
-          }
-        });
-        return newVisible;
-      });
-    }
-  }, [preparedColumns, visibleColumns]);
+    const { currentPage, totalPages } = pagination;
+    const itemsPerPage = Math.ceil(filteredData.length / totalPages);
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    
+    return filteredData.slice(start, end);
+  }, [filteredData, pagination]);
 
-  const toggleRowExpand = (rowIndex: number) => {
-    console.log(`Toggling row expand for index: ${rowIndex}`);
-    setExpandedRows(prev => ({
-      ...prev,
-      [rowIndex]: !prev[rowIndex]
-    }));
-  };
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Event handlers
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    console.log(`Search changed: ${value}`);
+    console.log(`Search changed: "${value}"`);
     setSearchValue(value);
-    
-    if (onSearch) onSearch(value);
-  };
+    onSearch?.(value);
+  }, [onSearch]);
 
-  const handleFilterApply = (filters: any) => {
+  const handleFilterApply = useCallback((filters: any) => {
     console.log('Filters applied:', filters);
-    if (onFilter) onFilter(filters);
+    onFilter?.(filters);
     setIsFilterOpen(false);
-  };
+  }, [onFilter]);
 
-  const handleSort = (column: string) => {
+  const handleSort = useCallback((column: string) => {
     let direction: SortDirection = 'asc';
     
     if (sortState.column === column) {
-      if (sortState.direction === 'asc') {
-        direction = 'desc';
-      } else if (sortState.direction === 'desc') {
-        direction = null;
-      } else {
-        direction = 'asc';
-      }
+      direction = sortState.direction === 'asc' ? 'desc' : 
+                  sortState.direction === 'desc' ? null : 'asc';
     }
     
     const newSortState = { column, direction };
     console.log('Sort state changed:', newSortState);
     setSortState(newSortState);
+    onSortChange?.(newSortState);
+  }, [sortState, onSortChange]);
+
+  const toggleRowExpand = useCallback((rowIndex: number) => {
+    console.log(`Toggling row expand for index: ${rowIndex}`);
+    setExpandedRows(prev => ({
+      ...prev,
+      [rowIndex]: !prev[rowIndex]
+    }));
+  }, []);
+
+  const handleColumnFilterChange = useCallback((key: string, value: string) => {
+    console.log(`Column filter changed: ${key} = "${value}"`);
+    setColumnFilters(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  }, []);
+
+  const toggleColumnFilters = useCallback(() => {
+    const newState = !showColumnFilters;
+    console.log(`Toggling column filters: ${newState}`);
+    setShowColumnFilters(newState);
+    if (!newState) {
+      setColumnFilters({});
+    }
+  }, [showColumnFilters]);
+
+  const toggleColumn = useCallback((columnKey: string) => {
+    const columnToToggle = preparedColumns.find(col => col.key === columnKey);
     
-    if (onSortChange) onSortChange(newSortState);
-  };
+    if (columnToToggle?.mandatory) {
+      toast.error(`Cannot hide mandatory column: ${columnToToggle.header}`);
+      return;
+    }
+    
+    console.log(`Toggling column visibility: ${columnKey}`);
+    setVisibleColumns(currentVisible => {
+      if (currentVisible.includes(columnKey)) {
+        if (currentVisible.length <= 1) {
+          toast.error("At least one column must be visible");
+          return currentVisible;
+        }
+        return currentVisible.filter(key => key !== columnKey);
+      } else {
+        return [...currentVisible, columnKey];
+      }
+    });
+  }, [preparedColumns]);
+
+  const toggleAllColumns = useCallback((checked: boolean) => {
+    console.log(`Toggling all columns: ${checked}`);
+    if (checked) {
+      setVisibleColumns(initialColumns.map(col => col.key));
+    } else {
+      const mandatoryKeys = preparedColumns
+        .filter(col => col.mandatory)
+        .map(col => col.key);
+      
+      setVisibleColumns(mandatoryKeys.length > 0 ? mandatoryKeys : [initialColumns[0]?.key]);
+    }
+  }, [initialColumns, preparedColumns]);
 
   const handleExport = (format: 'csv' | 'excel' | 'pdf') => {
     console.log(`Exporting as ${format}`);
@@ -192,61 +227,6 @@ export const DataGrid: React.FC<DataGridProps> = ({
       } catch (error) {
         console.error('Error exporting CSV:', error);
         toast.error('Failed to export CSV');
-      }
-    }
-  };
-
-  const handleColumnFilterChange = (key: string, value: string) => {
-    console.log(`Column filter changed: ${key} = ${value}`);
-    setColumnFilters(prev => ({
-      ...prev,
-      [key]: value
-    }));
-  };
-
-  const toggleColumnFilters = () => {
-    console.log(`Toggling column filters: ${!showColumnFilters}`);
-    setShowColumnFilters(!showColumnFilters);
-    if (!showColumnFilters) {
-      setColumnFilters({});
-    }
-  };
-
-  const toggleColumn = (columnKey: string) => {
-    const columnToToggle = preparedColumns.find(col => col.key === columnKey);
-    
-    if (columnToToggle?.mandatory === true) {
-      toast.error(`Cannot hide mandatory column: ${columnToToggle.header}`);
-      return;
-    }
-    
-    console.log(`Toggling column visibility: ${columnKey}`);
-    setVisibleColumns(currentVisible => {
-      if (currentVisible.includes(columnKey)) {
-        if (currentVisible.length <= 1) {
-          toast.error("At least one column must be visible");
-          return currentVisible;
-        }
-        return currentVisible.filter(key => key !== columnKey);
-      } else {
-        return [...currentVisible, columnKey];
-      }
-    });
-  };
-
-  const toggleAllColumns = (checked: boolean) => {
-    console.log(`Toggling all columns: ${checked}`);
-    if (checked) {
-      setVisibleColumns(initialColumns.map(col => col.key));
-    } else {
-      const mandatoryKeys = preparedColumns
-        .filter(col => col.mandatory === true)
-        .map(col => col.key);
-      
-      if (mandatoryKeys.length === 0) {
-        setVisibleColumns([initialColumns[0].key]);
-      } else {
-        setVisibleColumns(mandatoryKeys);
       }
     }
   };
@@ -324,19 +304,6 @@ export const DataGrid: React.FC<DataGridProps> = ({
     fileInputRef.current?.click();
   };
 
-  // Calculate pagination items
-  const paginatedData = React.useMemo(() => {
-    if (!pagination || !filteredData) return filteredData;
-    
-    const { currentPage } = pagination;
-    const itemsPerPage = Math.ceil(filteredData.length / pagination.totalPages);
-    
-    const start = (currentPage - 1) * itemsPerPage;
-    const end = start + itemsPerPage;
-    
-    return filteredData.slice(start, end);
-  }, [filteredData, pagination]);
-
   return (
     <>
       {showToolbar && (
@@ -356,7 +323,7 @@ export const DataGrid: React.FC<DataGridProps> = ({
           onToggleColumn={toggleColumn}
           onToggleAllColumns={toggleAllColumns}
           onExport={handleExport}
-          onImportClick={handleImportClick}
+          onImportClick={() => fileInputRef.current?.click()}
         />
       )}
       
@@ -401,7 +368,6 @@ export const DataGrid: React.FC<DataGridProps> = ({
         ref={fileInputRef}
         type="file"
         accept=".csv"
-        onChange={handleFileImport}
         className="hidden"
       />
     </>

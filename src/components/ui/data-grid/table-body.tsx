@@ -27,7 +27,7 @@ export const DataGridTableBody: React.FC<DataGridTableBodyProps> = ({
   onToggleRowExpand,
   onRowEdit
 }) => {
-  console.log('DataGridTableBody rendered');
+  console.log('DataGridTableBody rendered with', paginatedData?.length, 'items');
 
   if (filteredData.length === 0) {
     return (
