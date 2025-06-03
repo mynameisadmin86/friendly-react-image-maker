@@ -1,13 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
 import StatusBadge from '@/components/StatusBadge';
-import { DataGrid, SortableHeader, SortState, Column } from '@/components/ui/data-grid';
+import { DataGrid, SortState, Column } from '@/components/ui/data-grid';
+import { toast } from 'sonner';
 
 export interface BillItem {
   id: string;
@@ -46,7 +40,6 @@ const BillingTable: React.FC<BillingTableProps> = ({ bills }) => {
   }, [bills]);
 
   const handleSearch = (value: string) => {
-    console.log('Searching for:', value);
     if (value.trim() === '') {
       setFilteredBills(bills);
     } else {
@@ -62,7 +55,6 @@ const BillingTable: React.FC<BillingTableProps> = ({ bills }) => {
   };
 
   const handleFilter = (filters: any) => {
-    console.log('Filter applied:', filters);
     let filtered = [...bills];
     
     if (filters.status) {
@@ -79,9 +71,17 @@ const BillingTable: React.FC<BillingTableProps> = ({ bills }) => {
     setCurrentPage(1);
   };
 
-  const handleExport = (format: 'pdf' | 'excel') => {
-    console.log(`Export as ${format} clicked`);
-    alert(`Exporting data as ${format.toUpperCase()}`);
+  const handleExport = (format: 'pdf' | 'excel' | 'csv') => {
+    toast.success(`Exporting data as ${format.toUpperCase()}`);
+  };
+
+  const handleImport = (importedData: any[]) => {
+    // In a real app, this would validate and process the imported data
+    console.log('Imported data:', importedData);
+    toast.success(`Imported ${importedData.length} records`);
+    
+    // For demo purposes, let's just append the imported data
+    setFilteredBills(prev => [...prev, ...importedData]);
   };
 
   const handleSort = (sortState: SortState) => {
@@ -117,7 +117,12 @@ const BillingTable: React.FC<BillingTableProps> = ({ bills }) => {
     if (newBills[actualIndex] && key in newBills[actualIndex]) {
       (newBills[actualIndex] as any)[key] = value;
       setFilteredBills(newBills);
+      toast.success(`Updated ${key} to "${value}"`);
     }
+  };
+
+  const handleColumnReorder = () => {
+    toast.success('Column order updated');
   };
 
   const filterFields = [
@@ -135,13 +140,18 @@ const BillingTable: React.FC<BillingTableProps> = ({ bills }) => {
     { name: 'contractType', label: 'Contract Type', type: 'text' as const }
   ];
 
-  // Define dynamic columns - optimized widths for better data display without scrolling
+  // Define columns with enhanced features
   const columns: Column[] = [
     { 
       key: 'id', 
-      header: 'Quick Billing No.',
-      isEditable: true,
+      header: 'Billing #',
+      isEditable: false, // First column not editable by default
       width: 15,
+      priority: 1,
+      sequence: 1,
+      mandatory: true, // Can't be hidden
+      filterable: true,
+      filterType: 'text',
       cell: (value, row) => (
         <div>
           <div className="font-medium text-sm">{value}</div>
@@ -154,13 +164,26 @@ const BillingTable: React.FC<BillingTableProps> = ({ bills }) => {
       header: 'Status',
       isEditable: true,
       width: 10,
+      priority: 1,
+      sequence: 2,
+      filterable: true,
+      filterType: 'select',
+      filterOptions: [
+        { label: 'Under Amendment', value: 'Under Amendment' },
+        { label: 'Fresh', value: 'Fresh' },
+        { label: 'Confirmed', value: 'Confirmed' }
+      ],
       cell: (value) => <StatusBadge status={value} />
     },
     { 
       key: 'customerSupplier', 
-      header: 'Customer/Supplier',
+      header: 'Customer',
       isEditable: true,
       width: 15,
+      priority: 1,
+      sequence: 3,
+      filterable: true,
+      filterType: 'text',
       cell: (value, row) => (
         <div>
           <div className="font-medium text-sm">{value}</div>
@@ -173,6 +196,10 @@ const BillingTable: React.FC<BillingTableProps> = ({ bills }) => {
       header: 'Contract Type',
       isEditable: true,
       width: 15,
+      priority: 2,
+      sequence: 4,
+      filterable: true,
+      filterType: 'text',
       cell: (value, row) => (
         <div>
           <div className="font-medium text-sm">{value}</div>
@@ -184,13 +211,21 @@ const BillingTable: React.FC<BillingTableProps> = ({ bills }) => {
       key: 'totalNetAmount', 
       header: 'Total Net',
       isEditable: true,
-      width: 10
+      width: 10,
+      priority: 3,
+      sequence: 5,
+      filterable: true,
+      filterType: 'text'
     },
     { 
       key: 'billingType', 
       header: 'Billing Type',
       isEditable: true,
       width: 15,
+      priority: 6,
+      sequence: 6,
+      filterable: true,
+      filterType: 'text',
       cell: (value, row) => (
         <div>
           <div className="font-medium text-sm">{value}</div>
@@ -203,18 +238,20 @@ const BillingTable: React.FC<BillingTableProps> = ({ bills }) => {
       header: 'Group Net',
       isEditable: true,
       width: 10,
-      cell: (value, row) => (
-        <div>
-          <div className="font-medium text-sm">{value}</div>
-          <div className="text-xs text-gray-500">{row.lineNo}</div>
-        </div>
-      )
+      priority: 7,
+      sequence: 7,
+      filterable: true,
+      filterType: 'text'
     },
     { 
       key: 'lineNo', 
       header: 'Line #',
       isEditable: true,
-      width: 10
+      width: 10,
+      priority: 8,
+      sequence: 8,
+      filterable: true,
+      filterType: 'text'
     }
   ];
 
@@ -227,6 +264,7 @@ const BillingTable: React.FC<BillingTableProps> = ({ bills }) => {
       onSearch={handleSearch}
       onFilter={handleFilter}
       onExport={handleExport}
+      onImport={handleImport}
       onSortChange={handleSort}
       filterFields={filterFields}
       pagination={{
@@ -236,6 +274,8 @@ const BillingTable: React.FC<BillingTableProps> = ({ bills }) => {
       }}
       onRowEdit={handleRowEdit}
       defaultEditable={true}
+      maxVisibleColumns={5} // Show maximum 5 columns before nesting
+      mandatoryColumns={['id']} // 'id' column is mandatory and can't be hidden
     />
   );
 };

@@ -1,3 +1,4 @@
+
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
@@ -105,6 +106,22 @@ const TableCaption = React.forwardRef<
 ))
 TableCaption.displayName = "TableCaption"
 
+const TableNestedRow = React.forwardRef<
+  HTMLTableRowElement,
+  React.HTMLAttributes<HTMLTableRowElement> & { isOpen?: boolean }
+>(({ className, isOpen = false, ...props }, ref) => (
+  <tr
+    ref={ref}
+    className={cn(
+      "border-b bg-muted/20 transition-all",
+      isOpen ? "table-row" : "hidden",
+      className
+    )}
+    {...props}
+  />
+))
+TableNestedRow.displayName = "TableNestedRow"
+
 export {
   Table,
   TableHeader,
@@ -114,4 +131,5 @@ export {
   TableRow,
   TableCell,
   TableCaption,
+  TableNestedRow
 }
