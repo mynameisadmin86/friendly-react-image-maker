@@ -306,10 +306,10 @@ const DataGrid = ({
   };
 
   // Update column sequence for drag and drop
-  const updateColumnSequence = (sourceKey: string, targetKey: string) => {
-    if (sourceKey === targetKey) return;
+  const updateColumnSequence = (targetKey: string) => {
+    if (!sourceColumnKey || sourceColumnKey === targetKey) return;
 
-    const sourceIndex = sortedColumns.findIndex(col => col.key === sourceKey);
+    const sourceIndex = sortedColumns.findIndex(col => col.key === sourceColumnKey);
     const targetIndex = sortedColumns.findIndex(col => col.key === targetKey);
     
     if (sourceIndex === -1 || targetIndex === -1) return;
@@ -331,13 +331,16 @@ const DataGrid = ({
     
     // Force re-render
     setSortState({ ...sortState });
+    setSourceColumnKey(null);
   };
 
-  // Fix: Properly pass the updateColumnSequence function
+  // Drag and drop handlers
   const { handleDragStart, handleDragOver, handleDrop, handleDragEnd } = useDragDropHandlers(
     sortedColumns, 
     setIsDraggingColumn,
-    updateColumnSequence
+    (sourceKey) => {
+      setSourceColumnKey(sourceKey);
+    }
   );
 
   // Calculate pagination items based on filtered data
@@ -423,8 +426,7 @@ const DataGrid = ({
                                   {null}
                                 </SortableHeader>
                               )}
-                              {/* Fix: Changed the comparison to use explicit boolean value */}
-                              {column.mandatory === true && (
+                              {column.mandatory && (
                                 <CheckCircle2 className="h-3 w-3 ml-1 text-green-500" aria-label="Mandatory column" />
                               )}
                             </div>
@@ -519,8 +521,7 @@ const DataGrid = ({
                                     <div key={column.key} className="flex flex-col space-y-1">
                                       <span className="text-sm font-medium text-muted-foreground">
                                         {column.header}
-                                        {/* Fix: Changed the comparison to use explicit boolean value */}
-                                        {column.mandatory === true && (
+                                        {column.mandatory && (
                                           <CheckCircle2 className="inline h-3 w-3 ml-1 text-green-500" aria-label="Mandatory column" />
                                         )}
                                       </span>
