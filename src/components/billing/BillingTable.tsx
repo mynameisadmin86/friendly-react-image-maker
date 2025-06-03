@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import StatusBadge from '@/components/StatusBadge';
 import { DataGrid, SortState, Column } from '@/components/ui/data-grid';
@@ -119,10 +120,6 @@ const BillingTable: React.FC<BillingTableProps> = ({ bills }) => {
       setFilteredBills(newBills);
       toast.success(`Updated ${key} to "${value}"`);
     }
-  };
-
-  const handleColumnReorder = () => {
-    toast.success('Column order updated');
   };
 
   const filterFields = [
